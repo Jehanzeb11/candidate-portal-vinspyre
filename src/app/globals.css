@@ -1,0 +1,230 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  
+  /* Additional theme mappings */
+  --color-icon-primary: var(--icon-primary);
+  --color-icon-secondary: var(--icon-secondary);
+  --color-icon-muted: var(--icon-muted);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-overlay: var(--overlay);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* ── Neutral surfaces ─────────────────────────── */
+  --background: #fffff0;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* ── Brand primary ────────────────────────────── */
+  --primary: #E6366F;
+  --primary-foreground: #ffffff;
+
+  /* ── Secondary ────────────────────────────────── */
+  --secondary: #ffffff;
+  --secondary-foreground: #0f172a;
+
+  /* ── Muted & accents ──────────────────────────── */
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+
+  /* ── Destructive ──────────────────────────────── */
+  --destructive: #ef4444;
+
+  /* ── Borders / Inputs ─────────────────────────── */
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --ring: #E6366F;
+
+  /* ── Custom variables from user ────────────────── */
+  --icon-primary: #ffffff;
+  --icon-secondary: #E6366F;
+  --icon-muted: #64748b;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --overlay: rgba(15, 23, 42, 0.45);
+
+  /* ── Chart palette ────────────────────────────── */
+  --chart-1: #E6366F;
+  --chart-2: #10b981;
+  --chart-3: #3b82f6;
+  --chart-4: #8b5cf6;
+  --chart-5: #ec4899;
+
+  /* ── Radius ───────────────────────────────────── */
+  --radius: 0.625rem;
+
+  /* ── Sidebar ──────────────────────────────────── */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #E6366F;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #E6366F;
+}
+
+.dark {
+  /* ── Neutral surfaces ─────────────────────────── */
+  --background: #0f172a;
+  --foreground: #fffff0;
+  --card: #1e293b;
+  --card-foreground: #fffff0;
+  --popover: #1e293b;
+  --popover-foreground: #fffff0;
+
+  /* ── Brand primary ────────────────────────────── */
+  --primary: #ff5e97;
+  --primary-foreground: #0f172a;
+
+  /* ── Secondary ────────────────────────────────── */
+  --secondary: #1e293b;
+  --secondary-foreground: #fffff0;
+
+  /* ── Muted & accents ──────────────────────────── */
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #334155;
+  --accent-foreground: #ff5e97;
+
+  /* ── Destructive ──────────────────────────────── */
+  --destructive: #ef4444;
+
+  /* ── Borders / Inputs ─────────────────────────── */
+  --border: #334155;
+  --input: #1e293b;
+  --ring: #ff5e97;
+
+  /* ── Custom variables from user ────────────────── */
+  --icon-primary: #fffff0;
+  --icon-secondary: #ff5e97;
+  --icon-muted: #94a3b8;
+  --surface: #1e293b;
+  --surface-elevated: #334155;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --overlay: rgba(15, 23, 42, 0.65);
+
+  /* ── Chart palette ────────────────────────────── */
+  --chart-1: #ff5e97;
+  --chart-2: #10b981;
+  --chart-3: #3b82f6;
+  --chart-4: #8b5cf6;
+  --chart-5: #f472b6;
+
+  /* ── Sidebar ──────────────────────────────────── */
+  --sidebar: #0b0f19;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-primary: #ff5e97;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #ff5e97;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #ff5e97;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Nicer focus ring for keyboard nav */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring rounded-sm;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+/* ── Utility animations ───────────────────────────────────────────────────── */
+@layer utilities {
+  .animate-in {
+    animation: fade-in 0.3s ease-out both;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
