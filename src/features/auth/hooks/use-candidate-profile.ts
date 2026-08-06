@@ -14,7 +14,7 @@ export function useCandidateProfile() {
   const query = useQuery<CandidateProfile, Error>({
     queryKey: queryKeys.auth.candidateProfile(email),
     queryFn: async () => {
-      const body = await apiFetch<{ data: CandidateProfile }>("/recruitment/candidate-profile")
+      const body = await apiFetch<{ data: CandidateProfile }>("/recruitment/candidate-profile/me")
       return body.data
     },
     enabled: Boolean(token),

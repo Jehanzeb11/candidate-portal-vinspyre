@@ -120,7 +120,7 @@ export default function ProfilePage() {
   const application = profile.jobApplications?.[0]
 
   return (
-    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-12 max-w-8xl mx-auto">
 
       {/* ── Hero card ─────────────────────────────── */}
       <Card>

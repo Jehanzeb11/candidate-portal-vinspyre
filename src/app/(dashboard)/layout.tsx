@@ -6,12 +6,13 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { AppHeader } from "@/components/layout/app-header"
 import { ProfileBootstrap } from "@/features/auth/components/profile-bootstrap"
+import { ChangePasswordModal } from "@/features/auth/components/change-password-modal"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen>
-      {/* Fires GET /recruitment/candidate-profile once and saves to auth store */}
       <ProfileBootstrap />
+      <ChangePasswordModal />
       <AppSidebar />
       <SidebarInset className="flex min-h-screen flex-col bg-muted/30 transition-colors">
         <AppHeader />

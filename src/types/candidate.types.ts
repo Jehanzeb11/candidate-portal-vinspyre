@@ -65,3 +65,39 @@ export interface CandidateProfile {
   createdAt?: string
   updatedAt?: string
 }
+
+// ---------------------------------------------------------------------------
+// Assessment types
+// ---------------------------------------------------------------------------
+
+export interface AssessmentQuestion {
+  id: string
+  question: string
+  options: string[]
+  correctAnswer: number // index of correct option
+  explanation?: string
+}
+
+export interface Assessment {
+  id: string
+  title: string
+  description: string
+  totalQuestions: number
+  timeLimit: number // minutes
+  passingScore: number // percentage
+  questions: AssessmentQuestion[]
+}
+
+export interface AssessmentAnswer {
+  questionId: string
+  selectedAnswerIndex: number
+}
+
+export interface AssessmentSubmission {
+  applicationId: string
+  assessmentId: string
+  answers: AssessmentAnswer[]
+  score: number
+  passed: boolean
+  submittedAt: string
+}

@@ -1,16 +1,10 @@
 "use client"
-// ---------------------------------------------------------------------------
-// LoginForm
-//
-// Flow: RHF validates client-side → onValid submits a server action that
-// authenticates against the backend email-only login endpoint, then stores
-// the returned user in Zustand.
-// ---------------------------------------------------------------------------
-import { useActionState, useEffect, useTransition } from "react"
+
+import { useActionState, useEffect, useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Loader2, LogIn } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 
 import { login, type LoginResult } from "@/features/auth/actions"
 import { LoginSchema, type LoginInput } from "@/features/auth/validations"
@@ -48,8 +42,6 @@ function Field({
   )
 }
 
-// ─── Shared input styles ──────────────────────────────────────────────────────
-
 const inputBase = cn(
   "w-full rounded-2xl border border-transparent bg-[#eef2f6] dark:bg-zinc-800/80 px-4 py-3.5 text-sm font-semibold",
   "text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500",
@@ -64,8 +56,10 @@ export function LoginForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") ?? "/"
 
-  const setUser = useAuthStore((s) => s.setUser)
-  const setProfile = useAuthStore((s) => s.setProfile)
+  const setUser            = useAuthStore((s) => s.setUser)
+  const setPasswordUpdated = useAuthStore((s) => s.setPasswordUpdated)
+
+  const [showPassword, setShowPassword] = useState(false)
   const [result, submitLogin] = useActionState<LoginResult | undefined, FormData>(login, undefined)
   const [isPending, startTransition] = useTransition()
 
@@ -76,19 +70,15 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: { email: "" },
+    defaultValues: { email: "", password: "" },
   })
 
   useEffect(() => {
     if (!result) return
 
     if (result.status === "ok") {
-      console.log("=== LOGIN SUCCESS ===")
-      console.log("User:", result.user)
-      console.log("Token:", result.token)
-      console.log("Profile:", result.profile)
       setUser(result.user, result.token)
-      setProfile(result.profile)
+      setPasswordUpdated(result.isPasswordUpdated)
       router.push(callbackUrl)
       router.refresh()
       return
@@ -97,26 +87,27 @@ export function LoginForm() {
     if (result.fieldErrors?.email) {
       setError("email", { type: "server", message: result.fieldErrors.email })
     }
-
-    if (result.message && !result.fieldErrors?.email) {
+    if (result.fieldErrors?.password) {
+      setError("password", { type: "server", message: result.fieldErrors.password })
+    }
+    if (result.message && !result.fieldErrors?.email && !result.fieldErrors?.password) {
       setError("root.serverError", { type: "server", message: result.message })
     }
-  }, [callbackUrl, result, router, setError, setUser])
+  }, [callbackUrl, result, router, setError, setUser, setPasswordUpdated])
 
   function onValid(data: LoginInput) {
     const fd = new FormData()
     fd.set("email", data.email)
-
-    startTransition(() => {
-      submitLogin(fd)
-    })
+    fd.set("password", data.password)
+    startTransition(() => submitLogin(fd))
   }
 
   const busy = isPending
 
   return (
     <form onSubmit={handleSubmit(onValid)} className="space-y-5" noValidate>
-      {/* Top-level error */}
+
+      {/* Server error banner */}
       {errors.root?.serverError?.message && (
         <div
           role="alert"
@@ -137,7 +128,7 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           inputMode="email"
-          placeholder="admin@example.com"
+          placeholder="you@example.com"
           disabled={busy}
           aria-describedby={errors.email ? "email-error" : undefined}
           aria-invalid={!!errors.email}
@@ -148,6 +139,37 @@ export function LoginForm() {
               : "border-zinc-300 dark:border-zinc-600"
           )}
         />
+      </Field>
+
+      {/* Password */}
+      <Field label="Password" id="password" error={errors.password?.message}>
+        <div className="relative">
+          <input
+            {...register("password")}
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            placeholder="••••••••"
+            disabled={busy}
+            aria-describedby={errors.password ? "password-error" : undefined}
+            aria-invalid={!!errors.password}
+            className={cn(
+              inputBase,
+              "pr-12",
+              errors.password
+                ? "border-red-400 dark:border-red-600 focus:ring-red-500"
+                : "border-zinc-300 dark:border-zinc-600"
+            )}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
       </Field>
 
       {/* Submit */}
@@ -163,11 +185,10 @@ export function LoginForm() {
           "disabled:opacity-60 disabled:cursor-not-allowed transition-all"
         )}
       >
-        {busy ? (
-          <><Loader2 size={16} className="animate-spin" aria-hidden />Signing In…</>
-        ) : (
-          "Sign In to Portal"
-        )}
+        {busy
+          ? <><Loader2 size={16} className="animate-spin" aria-hidden />Signing In…</>
+          : "Sign In to Portal"
+        }
       </button>
 
     </form>

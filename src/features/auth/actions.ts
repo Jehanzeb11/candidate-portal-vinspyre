@@ -1,13 +1,13 @@
 "use server"
 
-import type { User, CandidateProfile } from "@/types"
+import type { User } from "@/types"
 import { LoginSchema } from "@/features/auth/validations"
 
 export type LoginResult =
-  | { status: "ok"; user: User; token: string; profile: CandidateProfile }
+  | { status: "ok"; user: User; token: string; isPasswordUpdated: boolean }
   | {
       status: "error"
-      fieldErrors?: Partial<Record<"email", string>>
+      fieldErrors?: Partial<Record<"email" | "password", string>>
       message?: string
     }
 
@@ -16,8 +16,6 @@ function getBackendBaseUrl(): string {
   if (!baseUrl) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.")
   return baseUrl.replace(/\/$/, "")
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function toUser(value: unknown): User | null {
   if (!value || typeof value !== "object") return null
@@ -51,38 +49,24 @@ function extractCandidate(body: unknown): User | null {
   return toUser((d as Record<string, unknown>).candidate)
 }
 
-// ─── Fetch profile with token ─────────────────────────────────────────────────
-
-async function fetchProfile(token: string): Promise<CandidateProfile | null> {
-  try {
-    const res = await fetch(`${getBackendBaseUrl()}/recruitment/candidate-profile`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    })
-    const body = await res.json().catch(() => null)
-    console.log("[fetchProfile] response:", JSON.stringify(body, null, 2))
-    if (!res.ok || !body?.data) return null
-    return body.data as CandidateProfile
-  } catch {
-    return null
-  }
-}
-
-// ─── Login action ─────────────────────────────────────────────────────────────
-
 export async function login(
   _prevState: LoginResult | undefined,
   formData: FormData
 ): Promise<LoginResult> {
-  const parsed = LoginSchema.safeParse({ email: formData.get("email") })
+  const parsed = LoginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  })
 
   if (!parsed.success) {
     const flat = parsed.error.flatten().fieldErrors
-    return { status: "error", fieldErrors: { email: flat.email?.[0] } }
+    return {
+      status: "error",
+      fieldErrors: {
+        email: flat.email?.[0],
+        password: flat.password?.[0],
+      },
+    }
   }
 
   try {
@@ -97,7 +81,6 @@ export async function login(
     )
 
     const body = await response.json().catch(() => null)
-    console.log("[login] raw response:", JSON.stringify(body, null, 2))
 
     if (!response.ok) {
       const fieldErrors =
@@ -106,36 +89,26 @@ export async function login(
           : undefined
       return {
         status: "error",
-        fieldErrors: { email: fieldErrors?.email },
-        message:
-          (body as { message?: string })?.message ?? "Unable to sign in.",
+        fieldErrors: {
+          email: fieldErrors?.email,
+          password: fieldErrors?.password,
+        },
+        message: (body as { message?: string })?.message ?? "Unable to sign in.",
       }
     }
 
     const token = extractToken(body)
     const user  = extractCandidate(body)
 
-    console.log("[login] token:", token)
-    console.log("[login] user:", user)
-
     if (!token || !user) {
-      return {
-        status: "error",
-        message: "Login succeeded but token or user data is missing.",
-      }
+      return { status: "error", message: "Login succeeded but token or user data is missing." }
     }
 
-    // Fetch full profile immediately after login
-    const profile = await fetchProfile(token)
-    if (!profile) {
-      return {
-        status: "error",
-        message: "Logged in but failed to load candidate profile.",
-      }
-    }
+    const isPasswordUpdated = (body as { data?: { isPasswordUpdated?: boolean } })?.data?.isPasswordUpdated ?? true
 
-    return { status: "ok", user, token, profile }
-  } catch {
+    return { status: "ok", user, token, isPasswordUpdated }
+  } catch (err) {
+    console.error("[login] unexpected error:", err)
     return { status: "error", message: "Unable to reach the authentication server." }
   }
 }

@@ -92,7 +92,7 @@ export async function getCandidateProfile(token: string): Promise<CandidateProfi
   }
 
   try {
-    const response = await fetch(`${getBackendBaseUrl()}/recruitment/candidate-profile`, {
+    const response = await fetch(`${getBackendBaseUrl()}/recruitment/candidate-profile/me`, {
       method: "GET",
       headers: {
         Accept: "application/json",
