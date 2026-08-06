@@ -36,22 +36,22 @@ const navMain = [
     title: "Overview",
     items: [
       { title: "Dashboard",  url: "/",          icon: LayoutDashboard, badge: "Live" },
-      { title: "Analytics",  url: "/analytics", icon: BarChart3 },
+      { title: "Profile",  url: "/profile", icon: BarChart3 },
     ],
   },
-  {
-    title: "Management",
-    items: [
-      { title: "Products", url: "/products", icon: Package, badge: "20+" },
-      { title: "Users",    url: "/users",    icon: Users },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      { title: "Settings", url: "/settings", icon: Settings },
-    ],
-  },
+  // {
+  //   title: "Management",
+  //   items: [
+  //     { title: "Products", url: "/products", icon: Package, badge: "20+" },
+  //     { title: "Users",    url: "/users",    icon: Users },
+  //   ],
+  // },
+  // {
+  //   title: "System",
+  //   items: [
+  //     { title: "Settings", url: "/settings", icon: Settings },
+  //   ],
+  // },
 ]
 
 function getInitials(name: string): string {
@@ -115,7 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         render={<Link href={item.url} />}
                         isActive={isActive}
                         tooltip={item.title}
-                        className={`w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                        className={`mb-2 w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                           isActive
                             ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 font-semibold"
                             : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"

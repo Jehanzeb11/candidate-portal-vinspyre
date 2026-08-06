@@ -1,38 +1,61 @@
 "use server"
-// ---------------------------------------------------------------------------
-// Auth Server Actions
-//
-// login()   validates credentials server-side, creates the session cookie,
-//           and redirects. RHF on the client maps the returned errors onto
-//           the correct fields.
-//
-// logout()  clears the session cookie and redirects to /login.
-// ---------------------------------------------------------------------------
-import { redirect } from "next/navigation"
-import { createSession, deleteSession, mintIdentityToken } from "@/server/session"
-import { LoginSchema } from "@/features/auth/validations"
-import { findDemoAccount } from "@/server/demo-accounts"
 
-// ─── Result type ─────────────────────────────────────────────────────────────
+import type { User } from "@/types"
+import { LoginSchema } from "@/features/auth/validations"
 
 export type LoginResult =
-  | { status: "ok" }
+  | { status: "ok"; user: User }
   | {
       status: "error"
-      fieldErrors?: Partial<Record<"email" | "password", string>>
+      fieldErrors?: Partial<Record<"email", string>>
       message?: string
     }
 
-// ─── login ───────────────────────────────────────────────────────────────────
+function getBackendBaseUrl(): string {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.")
+  }
+  return baseUrl.replace(/\/$/, "")
+}
+
+function toUser(value: unknown): User | null {
+  if (!value || typeof value !== "object") return null
+
+  const candidate = value as {
+    id?: unknown
+    fullName?: unknown
+    email?: unknown
+    phone?: unknown
+  }
+
+  const id = typeof candidate.id === "string" ? candidate.id : undefined
+  const name = typeof candidate.fullName === "string" ? candidate.fullName : undefined
+  const email = typeof candidate.email === "string" ? candidate.email : undefined
+
+  if (!id || !name || !email) return null
+
+  return {
+    id,
+    name,
+    email,
+    phone: typeof candidate.phone === "string" ? candidate.phone : undefined,
+    role: "viewer",
+    avatarUrl: undefined,
+  }
+}
+
+function extractUser(body: unknown): User | null {
+  if (!body || typeof body !== "object") return null
+  return toUser((body as { data?: { candidate?: unknown } }).data?.candidate)
+}
 
 export async function login(
-  _prev: LoginResult | undefined,
+  _prevState: LoginResult | undefined,
   formData: FormData
 ): Promise<LoginResult> {
-  // 1. Validate shape
   const parsed = LoginSchema.safeParse({
     email: formData.get("email"),
-    password: formData.get("password"),
   })
 
   if (!parsed.success) {
@@ -41,38 +64,52 @@ export async function login(
       status: "error",
       fieldErrors: {
         email: flat.email?.[0],
-        password: flat.password?.[0],
       },
     }
   }
 
-  const { email, password } = parsed.data
+  try {
+    const response = await fetch(`${getBackendBaseUrl()}/recruitment/candidate-profile/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    })
 
-  // 2. Check demo credentials (replace with a real backend call when ready)
-  const account = findDemoAccount(email, password)
+    const body = await response.json().catch(() => null)
 
-  if (!account) {
-    return { status: "error", message: "Invalid email or password." }
+    if (!response.ok) {
+      const fieldErrors =
+        body && typeof body === "object" ? (body as { errors?: Record<string, string> }).errors : undefined
+
+      return {
+        status: "error",
+        fieldErrors: {
+          email: fieldErrors?.email,
+        },
+        message:
+          (body && typeof body === "object" && typeof (body as { message?: string }).message === "string"
+            ? (body as { message?: string }).message
+            : undefined) ?? "Unable to sign in.",
+      }
+    }
+
+    const user = extractUser(body)
+    if (!user) {
+      return {
+        status: "error",
+        message: "Login succeeded, but the backend did not return a candidate profile.",
+      }
+    }
+
+    return { status: "ok", user }
+  } catch {
+    return {
+      status: "error",
+      message: "Unable to reach the authentication server.",
+    }
   }
-
-  // 3. Mint a signed JWT — verifiable with getEncodedKey() + jwtVerify.
-  //    In production: call your backend, get a real accessToken, pass it here.
-  const accessToken = await mintIdentityToken({
-    sub: account.user.id,
-    email: account.user.email,
-    name: account.user.name,
-    role: account.user.role,
-    demo: true,
-  })
-
-  await createSession(accessToken)
-
-  redirect("/")
-}
-
-// ─── logout ──────────────────────────────────────────────────────────────────
-
-export async function logout(): Promise<void> {
-  await deleteSession()
-  redirect("/login")
 }

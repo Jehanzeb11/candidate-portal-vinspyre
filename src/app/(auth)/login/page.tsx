@@ -13,7 +13,7 @@ const features = [
   { icon: BarChart3, label: "Real-time analytics & charts" },
   { icon: Package,   label: "Inventory & catalog management" },
   { icon: Users,     label: "Team access & role controls" },
-  { icon: Shield,    label: "JWT-secured session auth" },
+  { icon: Shield,    label: "Email-only candidate sign-in" },
 ]
 
 function LoginFormSkeleton() {
@@ -21,10 +21,6 @@ function LoginFormSkeleton() {
     <div className="space-y-5 animate-pulse">
       <div className="space-y-1.5">
         <div className="h-4 w-10 rounded bg-muted" />
-        <div className="h-10 rounded-lg bg-muted" />
-      </div>
-      <div className="space-y-1.5">
-        <div className="h-4 w-16 rounded bg-muted" />
         <div className="h-10 rounded-lg bg-muted" />
       </div>
       <div className="h-10 rounded-lg bg-muted" />
@@ -54,14 +50,7 @@ export default function LoginPage() {
         </Suspense>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Demo credentials:{" "}
-          <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">
-            admin@example.com
-          </code>{" "}
-          /{" "}
-          <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">
-            Admin@1234
-          </code>
+          Sign in uses your backend email login endpoint and stores the returned candidate in app state.
         </p>
       </div>
     </main>

@@ -51,7 +51,6 @@ export function AppHeader() {
   const [notifications, setNotifications] = React.useState(() => getNotifications())
   const unreadCount = notifications.filter((n) => n.unread).length
 
-  // Sync user from /api/auth/me into Zustand on mount
   useCurrentUser()
   const user = useAuthStore((s) => s.user)
 
@@ -87,8 +86,6 @@ export function AppHeader() {
         <div className="h-4 w-px bg-border hidden sm:block" />
 
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm font-medium">
-          <span className="text-muted-foreground hidden sm:inline-block">Panel</span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/60 hidden sm:inline-block" />
           <span className="text-foreground font-semibold capitalize">{pageTitle}</span>
         </nav>
       </div>
@@ -96,7 +93,7 @@ export function AppHeader() {
       {/* ── Right: actions + user pill ─────────────── */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Theme toggle */}
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
 
         {/* Notifications */}
         <Popover>

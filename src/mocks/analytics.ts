@@ -1,7 +1,6 @@
 // ---------------------------------------------------------------------------
 // Analytics mock service
 // Owns the canonical demo data for the analytics page.
-// Swap IS_DEMO_MODE → false to route through apiClient instead.
 // ---------------------------------------------------------------------------
 
 export interface WeeklyMetric {

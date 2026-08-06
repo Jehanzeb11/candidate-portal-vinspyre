@@ -3,11 +3,11 @@
 // Import from "@/features/auth" instead of deep paths.
 // ---------------------------------------------------------------------------
 
-// Actions (server — "use server" is declared inside the module)
-export { login, logout } from "./actions"
+// Actions (server)
+export { login } from "./actions"
 export type { LoginResult } from "./actions"
 
-// Validations (shared client + server)
+// Validations (shared by the login form and local auth helpers)
 export { LoginSchema } from "./validations"
 export type { LoginInput } from "./validations"
 

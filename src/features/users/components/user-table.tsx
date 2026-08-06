@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { User } from "@/types"
 
-// Fallback user data for demo mode (seeds the cache when no API data arrives)
+// Local user data seeds the table and the query cache.
 const fallbackUsers: User[] = [
   {
     id: "usr-1",

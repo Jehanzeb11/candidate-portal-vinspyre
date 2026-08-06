@@ -1,20 +1,35 @@
 "use client"
 // ---------------------------------------------------------------------------
-// TanStack Query hooks for the /users resource
-// Dual-mode: IS_DEMO_MODE → optimistic cache mutations; production → real API.
+// TanStack Query hooks for the local users resource.
 // ---------------------------------------------------------------------------
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { apiClient } from "@/server/api-client"
 import { queryKeys } from "@/lib/query-keys"
-import { IS_DEMO_MODE } from "@/constants"
+import { getLocalUsers } from "@/mocks/users"
 import type { User } from "@/types"
+
+function getUsersKey() {
+  return queryKeys.users.list()
+}
+
+function getSeedUsers(): User[] {
+  return getLocalUsers()
+}
+
+function makeUser(payload: Omit<User, "id" | "createdAt">): User {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString().slice(0, 10),
+    ...payload,
+  }
+}
 
 // ─── GET list ────────────────────────────────────────────────────────────────
 
 export function useUsers() {
   return useQuery({
-    queryKey: queryKeys.users.list(),
-    queryFn: () => apiClient.get<User[]>("/users"),
+    queryKey: getUsersKey(),
+    queryFn: async () => getSeedUsers(),
+    initialData: getSeedUsers(),
   })
 }
 
@@ -23,7 +38,7 @@ export function useUsers() {
 export function useUser(id: string) {
   return useQuery({
     queryKey: queryKeys.users.detail(id),
-    queryFn: () => apiClient.get<User>(`/users/${id}`),
+    queryFn: async () => getSeedUsers().find((user) => user.id === id) as User,
     enabled: Boolean(id),
   })
 }
@@ -34,8 +49,11 @@ export function useCreateUser() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: Omit<User, "id" | "createdAt">) =>
-      apiClient.post<User, typeof payload>("/users", payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.users.all }),
+      Promise.resolve(makeUser(payload)),
+    onSuccess: (created) => {
+      qc.setQueryData<User[]>(getUsersKey(), (current = []) => [created, ...current])
+      qc.setQueryData(queryKeys.users.detail(created.id), created)
+    },
   })
 }
 
@@ -45,22 +63,19 @@ export function useUpdateUser(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: Partial<Omit<User, "id" | "createdAt">>) => {
-      if (IS_DEMO_MODE) {
-        // Optimistic cache update — no real network call in demo mode.
-        const current = qc.getQueryData<User[]>(queryKeys.users.list()) ?? []
-        const updated = current.map((u) =>
-          u.id === id ? { ...u, ...payload } : u
-        )
-        qc.setQueryData(queryKeys.users.list(), updated)
-        return Promise.resolve({ id, ...payload } as User)
-      }
-      return apiClient.patch<User, typeof payload>(`/users/${id}`, payload)
+      const current = qc.getQueryData<User[]>(getUsersKey()) ?? getSeedUsers()
+      const existing = current.find((user) => user.id === id)
+      return Promise.resolve({
+        ...(existing ?? makeUser({ name: "", email: "", role: "viewer" })),
+        ...payload,
+        id,
+      } as User)
     },
-    onSuccess: () => {
-      if (!IS_DEMO_MODE) {
-        qc.invalidateQueries({ queryKey: queryKeys.users.detail(id) })
-        qc.invalidateQueries({ queryKey: queryKeys.users.all })
-      }
+    onSuccess: (updated) => {
+      qc.setQueryData<User[]>(getUsersKey(), (current = []) =>
+        current.map((user) => (user.id === id ? { ...user, ...updated } : user))
+      )
+      qc.setQueryData(queryKeys.users.detail(id), updated)
     },
   })
 }
@@ -70,20 +85,10 @@ export function useUpdateUser(id: string) {
 export function useDeleteUser() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => {
-      if (IS_DEMO_MODE) {
-        // Optimistic cache update — filter the user out of the list.
-        const current = qc.getQueryData<User[]>(queryKeys.users.list()) ?? []
-        const filtered = current.filter((u) => u.id !== id)
-        qc.setQueryData(queryKeys.users.list(), filtered)
-        return Promise.resolve()
-      }
-      return apiClient.delete<void>(`/users/${id}`)
-    },
-    onSuccess: () => {
-      if (!IS_DEMO_MODE) {
-        qc.invalidateQueries({ queryKey: queryKeys.users.all })
-      }
+    mutationFn: (id: string) => Promise.resolve(id),
+    onSuccess: (_id) => {
+      qc.setQueryData<User[]>(getUsersKey(), (current = []) => current.filter((user) => user.id !== id))
+      qc.removeQueries({ queryKey: queryKeys.users.detail(id) })
     },
   })
 }

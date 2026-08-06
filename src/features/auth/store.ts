@@ -1,13 +1,13 @@
 // ---------------------------------------------------------------------------
 // Auth store — client-side cache of the current user profile
 //
-// Source of truth:  httpOnly session cookie (server) + backend /auth/me
-// This store:       mirrors the profile on the client for UI rendering
+// Source of truth: backend login response held in client state.
+// This store mirrors the current user for UI rendering.
 //
-// Populated by:     useCurrentUser hook after a successful /auth/me fetch
-// Cleared by:       logout
+// Populated by: login action after successful backend authentication
+// Cleared by: logout button
 //
-// NOT persisted to localStorage — the server session is the authority.
+// Not persisted to localStorage.
 // ---------------------------------------------------------------------------
 import { create } from "zustand"
 import { devtools } from "zustand/middleware"

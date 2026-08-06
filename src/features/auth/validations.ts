@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // Auth validation schemas
-// Shared between the client (react-hook-form resolver) and the server action.
+// Shared between the client form and local auth helpers.
 // ---------------------------------------------------------------------------
 import { z } from "zod"
 
@@ -11,7 +11,6 @@ export const LoginSchema = z.object({
     .email("Please enter a valid email address.")
     .trim()
     .toLowerCase(),
-  password: z.string().min(1, "Password is required."),
 })
 
 export type LoginInput = z.infer<typeof LoginSchema>

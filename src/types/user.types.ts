@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// User types — matches the shape returned by GET /auth/me on the backend
+// User types — normalized candidate shape used by the app
 // ---------------------------------------------------------------------------
 
 export type UserRole = "admin" | "manager" | "user" | "viewer"
@@ -8,6 +8,7 @@ export interface User {
   id: string
   name: string
   email: string
+  phone?: string
   role: UserRole
   avatarUrl?: string
   createdAt?: string
