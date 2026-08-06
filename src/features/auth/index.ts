@@ -7,6 +7,9 @@
 export { login } from "./actions"
 export type { LoginResult } from "./actions"
 
+export { getCandidateProfile } from "./candidate-profile.actions"
+export type { CandidateProfileResult } from "./candidate-profile.actions"
+
 // Validations (shared by the login form and local auth helpers)
 export { LoginSchema } from "./validations"
 export type { LoginInput } from "./validations"
@@ -20,3 +23,4 @@ export { LogoutButton } from "./components/logout-button"
 
 // Hooks
 export { useCurrentUser } from "./hooks/use-current-user"
+export { useCandidateProfile } from "./hooks/use-candidate-profile"

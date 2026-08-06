@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
@@ -9,8 +10,11 @@ import {
   Users,
   BarChart3,
   Settings,
-  Sparkles,
+  User
 } from "lucide-react"
+
+import logo from "@/assets/logo.png"
+import iconLogo from "@/assets/icon-logo.png"
 
 import {
   Sidebar,
@@ -35,8 +39,8 @@ const navMain = [
   {
     title: "Overview",
     items: [
-      { title: "Dashboard",  url: "/",          icon: LayoutDashboard, badge: "Live" },
-      { title: "Profile",  url: "/profile", icon: BarChart3 },
+      { title: "Dashboard", url: "/", icon: LayoutDashboard },
+      { title: "Profile", url: "/profile", icon: User },
     ],
   },
   // {
@@ -66,9 +70,10 @@ function getInitials(name: string): string {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const user = useAuthStore((s) => s.user)
+  const profile = useAuthStore((s) => s.profile)
 
-  const displayName  = user?.name  ?? "Admin User"
-  const displayEmail = user?.email ?? "admin@example.com"
+  const displayName  = profile?.fullName ?? user?.name  ?? "Candidate"
+  const displayEmail = profile?.email    ?? user?.email ?? ""
   const initials     = getInitials(displayName)
 
   return (
@@ -78,19 +83,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       {/* ── Logo ──────────────────────────────────── */}
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-sidebar-border/60">
-        <Link href="/" className="flex items-center gap-3 group min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-pink-500 text-white shadow-md shadow-primary/25 group-hover:scale-105 transition-transform duration-200">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
-            <span className="font-bold text-sm tracking-tight text-sidebar-foreground leading-none truncate">
-              {APP_NAME}
-            </span>
-            <span className="text-[10px] font-semibold text-primary tracking-wider uppercase mt-1">
-              Enterprise Panel
-            </span>
-          </div>
+      <SidebarHeader className="h-16 flex justify-center px-3 border-b border-sidebar-border/60">
+        <Link href="/" className="flex  w-full">
+          {/* Full logo — visible when sidebar is expanded */}
+          <Image
+            src={logo}
+            alt="Logo"
+            width={140}
+            height={40}
+            className="object-contain group-data-[collapsible=icon]:hidden"
+            priority
+          />
+          {/* Icon logo — visible when sidebar is collapsed */}
+          <Image
+            src={iconLogo}
+            alt="Logo"
+            width={32}
+            height={32}
+            className="object-contain hidden group-data-[collapsible=icon]:block"
+            priority
+          />
         </Link>
       </SidebarHeader>
 
@@ -129,17 +141,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <span className="group-data-[collapsible=icon]:hidden">
                           {item.title}
                         </span>
-                        {item.badge && (
-                          <SidebarMenuBadge
-                            className={`ml-auto group-data-[collapsible=icon]:hidden text-[10px] px-1.5 py-0.5 rounded-full ${
-                              isActive
-                                ? "bg-primary-foreground/20 text-primary-foreground"
-                                : "bg-primary/10 text-primary"
-                            }`}
-                          >
-                            {item.badge}
-                          </SidebarMenuBadge>
-                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )

@@ -2,12 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import {
-  Bell,
-  ChevronRight,
-  CheckCheck,
-  Clock,
-} from "lucide-react"
+import { Bell, CheckCheck, Clock } from "lucide-react"
 
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -22,12 +17,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { ThemeToggle } from "@/components/common/theme-toggle"
 import { useAuthStore } from "@/features/auth/store"
-import { useCurrentUser } from "@/features/auth/hooks/use-current-user"
 import { getNotifications } from "@/mocks/notifications"
+import Link from "next/link"
 
-// Derives initials from a display name
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -37,7 +30,6 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-// Page title map for clean breadcrumbs
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
   "/analytics": "Analytics",
@@ -51,8 +43,12 @@ export function AppHeader() {
   const [notifications, setNotifications] = React.useState(() => getNotifications())
   const unreadCount = notifications.filter((n) => n.unread).length
 
-  useCurrentUser()
-  const user = useAuthStore((s) => s.user)
+  // Read everything from the global store — populated by the login action
+  const profile = useAuthStore((s) => s.profile)
+  const user    = useAuthStore((s) => s.user)
+
+  const displayName = profile?.fullName ?? user?.name ?? "Candidate"
+  const initials    = getInitials(displayName)
 
   const markAllRead = () =>
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))
@@ -63,10 +59,6 @@ export function AppHeader() {
       ? pathname.split("/").filter(Boolean)[0].charAt(0).toUpperCase() +
         pathname.split("/").filter(Boolean)[0].slice(1)
       : "Dashboard")
-
-  const displayName = user?.name ?? "Admin"
-  const displayRole = user?.role ?? "administrator"
-  const initials = getInitials(displayName)
 
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/60 bg-background/80 px-4 sm:px-6 backdrop-blur-md transition-all">
@@ -92,11 +84,9 @@ export function AppHeader() {
 
       {/* ── Right: actions + user pill ─────────────── */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Theme toggle */}
-        {/* <ThemeToggle /> */}
 
         {/* Notifications */}
-        <Popover>
+        {/* <Popover>
           <PopoverTrigger
             render={
               <Button
@@ -180,12 +170,12 @@ export function AppHeader() {
               View all notifications
             </Button>
           </PopoverContent>
-        </Popover>
+        </Popover> */}
 
-        <div className="h-5 w-px bg-border" />
+        {/* <div className="h-5 w-px bg-border" /> */}
 
         {/* User pill */}
-        <div className="flex items-center gap-2 pl-1">
+        <Link href={"/profile"} className="flex items-center gap-2 pl-1 cursor-pointer">
           <Avatar className="h-8 w-8 ring-2 ring-primary/20">
             <AvatarFallback className="bg-linear-to-tr from-purple-600 to-indigo-600 text-white text-xs font-bold">
               {initials}
@@ -195,11 +185,12 @@ export function AppHeader() {
             <span className="text-xs font-semibold text-foreground leading-tight">
               {displayName}
             </span>
-            <span className="text-[10px] text-primary font-medium capitalize">
-              {displayRole}
+            <span className="text-[10px] text-primary font-medium">
+              Candidate
             </span>
           </div>
-        </div>
+        </Link>
+
       </div>
     </header>
   )

@@ -65,6 +65,7 @@ export function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/"
 
   const setUser = useAuthStore((s) => s.setUser)
+  const setProfile = useAuthStore((s) => s.setProfile)
   const [result, submitLogin] = useActionState<LoginResult | undefined, FormData>(login, undefined)
   const [isPending, startTransition] = useTransition()
 
@@ -82,7 +83,12 @@ export function LoginForm() {
     if (!result) return
 
     if (result.status === "ok") {
-      setUser(result.user)
+      console.log("=== LOGIN SUCCESS ===")
+      console.log("User:", result.user)
+      console.log("Token:", result.token)
+      console.log("Profile:", result.profile)
+      setUser(result.user, result.token)
+      setProfile(result.profile)
       router.push(callbackUrl)
       router.refresh()
       return

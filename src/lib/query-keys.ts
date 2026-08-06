@@ -6,6 +6,7 @@
 export const queryKeys = {
   auth: {
     me: ["auth", "me"] as const,
+    candidateProfile: (email: string) => ["auth", "candidate-profile", email] as const,
   },
 
   users: {

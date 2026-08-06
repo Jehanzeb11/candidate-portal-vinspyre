@@ -1,19 +1,28 @@
 "use client"
 
 import { useState } from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
+import { useAuthStore } from "@/features/auth/store"
+import { ApiError } from "@/lib/api-fetch"
 
 function makeQueryClient() {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error) => {
+        if (error instanceof ApiError && error.status === 401) {
+          useAuthStore.getState().clearUser()
+          window.location.href = "/login"
+        }
+      },
+    }),
     defaultOptions: {
       queries: {
-        // Data is considered fresh for 1 minute — avoids redundant refetches
-        // when navigating between pages that share the same query key.
         staleTime: 60 * 1000,
-        // Retry once on failure; most transient errors resolve in one retry.
-        retry: 1,
-        // Panels/dashboards don't need aggressive window-focus refetching.
+        retry: (failureCount, error) => {
+          if (error instanceof ApiError && error.status === 401) return false
+          return failureCount < 1
+        },
         refetchOnWindowFocus: false,
       },
     },
