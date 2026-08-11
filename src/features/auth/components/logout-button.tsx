@@ -21,7 +21,7 @@ export function LogoutButton({ className }: { className?: string }) {
       onClick={handleLogout}
       aria-label="Sign out"
       className={cn(
-        "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+        "inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer bg-border w-full",
         "text-zinc-600 dark:text-zinc-400",
         "hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100",
         "transition-colors",

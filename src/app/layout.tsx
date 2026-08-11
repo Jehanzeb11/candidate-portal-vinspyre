@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: APP_NAME,
+  title: "Vinspyre Candidate Portal",
   description: APP_DESCRIPTION,
 }
 

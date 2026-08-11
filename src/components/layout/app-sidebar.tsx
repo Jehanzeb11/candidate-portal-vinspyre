@@ -153,7 +153,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       {/* ── User footer ───────────────────────────── */}
       <SidebarFooter className="border-t border-sidebar-border/60 p-3">
-        <div className="flex items-center justify-between gap-3 group-data-[collapsible=icon]:justify-center">
+        <div className="flex flex-col justify-center gap-3 group-data-[collapsible=icon]:justify-center">
           <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden overflow-hidden">
             <Avatar className="h-9 w-9 shrink-0 border border-primary/25">
               <AvatarFallback className="bg-linear-to-br from-primary to-pink-600 text-white text-xs font-bold">
