@@ -47,6 +47,25 @@ export interface CandidateJobApplication {
   updatedAt?: string
 }
 
+// ---------------------------------------------------------------------------
+// Recruitment Progress types
+// ---------------------------------------------------------------------------
+
+export interface RecruitmentStage {
+  key: string
+  label: string
+  status: "done" | "active" | "pending" | "submitted"
+}
+
+export interface RecruitmentProgress {
+  currentStage: string
+  currentStageLabel: string
+  currentStatus: "active" | "pending" | "completed"
+  progressPercent: number
+  message: string
+  stages: RecruitmentStage[]
+}
+
 export interface CandidateProfile {
   id: string
   fullName: string
@@ -62,6 +81,7 @@ export interface CandidateProfile {
   employmentRecords?: CandidateEmploymentRecord[]
   createdByUserId?: string | null
   jobApplications?: CandidateJobApplication[]
+  recruitmentProgress?: RecruitmentProgress
   createdAt?: string
   updatedAt?: string
 }
@@ -70,12 +90,14 @@ export interface CandidateProfile {
 // Assessment types
 // ---------------------------------------------------------------------------
 
-export type AssessmentQuestionType = "mcq" | "free_input" | "fill_blank"
+export type AssessmentQuestionType = "mcq" | "free_input" | "fill_blank" | "descriptive"
 
 export interface AssessmentQuestion {
   id: string
   /** Determines how the question is rendered and scored */
-  type: AssessmentQuestionType
+  type?: AssessmentQuestionType
+  /** Alias for type field from API (maps to type internally) */
+  questionType?: AssessmentQuestionType
   question: string
   skillTag?: string
   difficulty?: "easy" | "medium" | "hard"
@@ -97,7 +119,7 @@ export interface Assessment {
   timeLimit?: number // minutes
   passingScore?: number // percentage — calculated from MCQ questions only
   questions: AssessmentQuestion[]
-  status?: "pending" | "in_progress" | "completed"
+  status?: "pending" | "in_progress" | "completed" | "submitted"
   answers?: AssessmentAnswer[] | null
   score?: number | null
   createdAt?: string

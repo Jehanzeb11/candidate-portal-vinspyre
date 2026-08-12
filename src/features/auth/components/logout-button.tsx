@@ -9,9 +9,20 @@ export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter()
   const clearUser = useAuthStore((s) => s.clearUser)
 
-  function handleLogout() {
+  async function handleLogout() {
+    // Clear the auth store (user, token, profile)
     clearUser()
-    router.push("/login")
+    
+    // Clear localStorage to remove persisted auth data
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth-storage")
+      localStorage.clear()
+    }
+    
+    // Redirect to login page
+    await router.push("/login")
+    
+    // Refresh the page to clear any cached data
     router.refresh()
   }
 

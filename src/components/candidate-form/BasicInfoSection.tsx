@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
+import { UseFormRegister, FieldErrors, UseFormWatch, } from "react-hook-form";
 import {
   User,
   Mail,
@@ -34,8 +34,11 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   watch,
   jobTitle,
 }) => {
-  const hasReference = watch("hasReference");
-  const [isReadOnly, setIsReadOnly] = useState(false);
+const hasReference = watch("hasReference");
+
+console.log("hasReference:", hasReference);
+
+const [isReadOnly, setIsReadOnly] = useState(false);
 
   useEffect(() => {
     setIsReadOnly(!!jobTitle);
@@ -256,7 +259,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
 
         {/* Comfortable working evening shift? */}
         <div className="md:col-span-2 bg-[#f8f9fa] p-4.5 rounded-xl border border-slate-200/90 shadow-sm">
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
+          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-2.5">
             Are you comfortable working the evening shift (7:00 PM – 4:00 AM)?{" "}
             <span className="text-rose-500 font-bold">*</span>
           </label>
@@ -329,7 +332,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
 
         {/* Have you worked with us before? */}
         <div className="md:col-span-2 bg-[#f8f9fa] p-4.5 rounded-xl border border-slate-200/90 shadow-sm">
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
+          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-2.5">
             Have you worked with us before? <span className="text-rose-500 font-bold">*</span>
           </label>
           <div className="flex items-center space-x-6">
@@ -364,82 +367,96 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         </div>
 
         {/* Any Reference */}
-        <div className="md:col-span-2 bg-[#f8f9fa] p-4.5 rounded-xl border border-slate-200/90 shadow-sm space-y-4">
-          <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
-              Do you have any reference? <span className="text-rose-500 font-bold">*</span>
-            </label>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <label className="flex items-center space-x-2.5 cursor-pointer text-sm font-semibold text-slate-700">
-                <input
-                  type="radio"
-                  value="yes"
-                  {...register("hasReference", {
-                    required: "Please select an option",
-                  })}
-                  className="w-4 h-4 text-[#d81b60] bg-white border-slate-300 focus:ring-[#d81b60] focus:ring-2 accent-[#d81b60]"
-                />
-                <span>Yes</span>
-              </label>
-              <label className="flex items-center space-x-2.5 cursor-pointer text-sm font-semibold text-slate-700">
-                <input
-                  type="radio"
-                  value="no"
-                  {...register("hasReference", {
-                    required: "Please select an option",
-                  })}
-                  className="w-4 h-4 text-[#d81b60] bg-white border-slate-300 focus:ring-[#d81b60] focus:ring-2 accent-[#d81b60]"
-                />
-                <span>No</span>
-              </label>
-            </div>
-            {errors.hasReference && (
-              <p className="text-xs text-rose-500 font-medium mt-1">
-                {errors.hasReference.message}
-              </p>
-            )}
-          </div>
+{/* Any Reference */}
+<div className="md:col-span-2 bg-[#f8f9fa] p-4.5 rounded-xl border border-slate-200/90 shadow-sm space-y-4">
+  <div>
+    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-2.5">
+      Do you have any reference?{" "}
+      <span className="text-rose-500 font-bold">*</span>
+    </label>
 
-          {hasReference === "yes" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2">
-                <FormField
-                  label="Reference Name"
-                  htmlFor="referenceName"
-                  required
-                  icon={<Users className="w-4 h-4" />}
-                  error={errors.referenceName?.message}
-                >
-                  <input
-                    type="text"
-                    id="referenceName"
-                    placeholder="e.g. John Doe"
-                    {...register("referenceName", {
-                      required: "Reference name is required",
-                    })}
-                    className={inputStyles}
-                  />
-                </FormField>
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
 
-                <FormField
-                  label="Reference Relationship"
-                  htmlFor="referenceRelationship"
-                  required
-                  icon={<Users className="w-4 h-4" />}
-                  error={errors.referenceRelationship?.message}
-                >
-                  <input
-                    type="text"
-                    id="referenceRelationship"
-                    placeholder="e.g. Former Manager"
-                    {...register("referenceRelationship", {
-                      required: "Reference relationship is required",
-                    })}
-                    className={inputStyles}
-                  />
-                </FormField>
-              </div>
-          )}
-        </div>
+      {/* YES */}
+      <label className="flex items-center space-x-2.5 cursor-pointer text-sm font-semibold text-slate-700">
+        <input
+          type="radio"
+          value="yes"
+          {...register("hasReference", {
+            required: "Please select an option",
+          })}
+          className="w-4 h-4 text-[#d81b60] bg-white border-slate-300 focus:ring-[#d81b60] focus:ring-2 accent-[#d81b60]"
+        />
+        <span>Yes</span>
+      </label>
+
+      {/* NO */}
+      <label className="flex items-center space-x-2.5 cursor-pointer text-sm font-semibold text-slate-700">
+        <input
+          type="radio"
+          value="no"
+          {...register("hasReference", {
+            required: "Please select an option",
+          })}
+          className="w-4 h-4 text-[#d81b60] bg-white border-slate-300 focus:ring-[#d81b60] focus:ring-2 accent-[#d81b60]"
+        />
+        <span>No</span>
+      </label>
+
+    </div>
+
+    {errors.hasReference && (
+      <p className="text-xs text-rose-500 font-medium mt-1">
+        {errors.hasReference.message}
+      </p>
+    )}
+  </div>
+
+  {/* Reference Details */}
+  {hasReference === "yes" && (
+    <div className="space-y-4 pt-2 border-t border-slate-300">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <FormField
+          label="Reference Name"
+          htmlFor="referenceName"
+          required
+          icon={<Users className="w-4 h-4" />}
+          error={errors.referenceName?.message}
+        >
+          <input
+            type="text"
+            id="referenceName"
+            placeholder="e.g. John Doe"
+            {...register("referenceName", {
+              required: "Reference name is required",
+            })}
+            className={inputStyles}
+          />
+        </FormField>
+
+        <FormField
+          label="Reference Relationship"
+          htmlFor="referenceRelationship"
+          required
+          icon={<Users className="w-4 h-4" />}
+          error={errors.referenceRelationship?.message}
+        >
+          <input
+            type="text"
+            id="referenceRelationship"
+            placeholder="e.g. Former Manager"
+            {...register("referenceRelationship", {
+              required: "Reference relationship is required",
+            })}
+            className={inputStyles}
+          />
+        </FormField>
+
+      </div>
+    </div>
+  )}
+</div>
 
         {/* Cover Letter (Textarea - Optional) */}
         <div className="md:col-span-2">

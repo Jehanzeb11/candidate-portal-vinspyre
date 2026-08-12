@@ -5,15 +5,15 @@ import { useRouter, useParams } from "next/navigation"
 import { AlertCircle, Clock, CheckCircle2, XCircle, AlertTriangle, Loader } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { apiFetch } from "@/lib/api-fetch"
 import ENDPOINTS from "@/server/Endpoints"
+import { MCQQuestion, FillBlankQuestion, DescriptiveQuestion } from "@/components/assessment/QuestionTypes"
 import type { AssessmentAnswer, Assessment } from "@/types"
+import { useAuthStore } from "@/store"
 
-type AssessmentState = "loading" | "instructions" | "taking" | "results" | "blocked"
+type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled"
 
 interface ViolationRecord {
   type: string
@@ -21,21 +21,27 @@ interface ViolationRecord {
   details?: string
 }
 
+// Helper function to get question type from either type or questionType field
+const getQuestionType = (question: any): string => {
+  return question.type || question.questionType || "mcq"
+}
+
 const VIOLATION_THRESHOLD = 3
 const MAX_VIOLATIONS_BEFORE_AUTO_SUBMIT = 5
-const DEFAULT_TIME_LIMIT = 30 // minutes
+const TIME_PER_QUESTION = 120 // 2 minutes per question in seconds
 
 export default function AssessmentPage() {
   const router = useRouter()
   const params = useParams()
   const applicationId = params.applicationId as string
+  const clearUser = useAuthStore((s) => s.clearUser)
 
   // State management
   const [state, setState] = useState<AssessmentState>("loading")
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [loadError, setLoadError] = useState("")
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME_LIMIT * 60)
+  const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, AssessmentAnswer>>({})
   const [score, setScore] = useState(0)
@@ -43,13 +49,69 @@ export default function AssessmentPage() {
   const [violations, setViolations] = useState<ViolationRecord[]>([])
   const [blockedReason, setBlockedReason] = useState("")
   const [tabHidden, setTabHidden] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [shouldAutoSubmit, setShouldAutoSubmit] = useState(false)
+  const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false)
+  const [questionTimers, setQuestionTimers] = useState<Record<string, number>>({})
+  const [justSubmitted, setJustSubmitted] = useState(false)
+  const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null)
+  const [totalAssessmentDuration, setTotalAssessmentDuration] = useState(0)
 
   // Refs
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const pageRef = useRef<HTMLDivElement>(null)
   const violationRef = useRef<ViolationRecord[]>([])
+  const submitRef = useRef(false)
 
   // ─── Violation Recording ────────────────────────────────────────────────
+  // ─── Report Violations to Backend ──────────────────────────────────────
+  const reportViolationsToBackend = useCallback(async (violationsToReport: ViolationRecord[]) => {
+    try {
+      const payload = {
+        testId: assessment?.id,
+        candidateProfileId: assessment?.candidateProfileId,
+        violations: violationsToReport.map((v) => ({
+          type: v.type,
+          message: v.details || v.type,
+          detectedAt: new Date(v.timestamp).toISOString(),
+        })),
+      }
+
+      const response = await apiFetch<any>(ENDPOINTS.VIOLATION, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      })
+
+      // If response indicates test is disabled
+      if (response.data?.isDisabled) {
+        toast.error("❌ Assessment Disabled", {
+          description: response.data.disabledReason || "Your test has been disabled due to violations.",
+          duration: 5000,
+        })
+
+        // Show violation disabled screen
+        setState("violation_disabled")
+
+        // Exit fullscreen
+        try {
+          if (document.fullscreenElement) {
+            await document.exitFullscreen()
+          }
+        } catch (e) {
+          console.error("Exit fullscreen error:", e)
+        }
+
+        // Logout after 3-4 seconds
+        setTimeout(() => {
+          clearUser()
+          router.push("/login")
+        }, 5000)
+      }
+    } catch (error) {
+      console.error("Error reporting violations:", error)
+    }
+  }, [assessment])
+
   const recordViolation = useCallback((type: string, details?: string) => {
     const violation: ViolationRecord = {
       type,
@@ -61,21 +123,18 @@ export default function AssessmentPage() {
 
     const violationCount = violationRef.current.length
 
+    // Report to backend at exactly 3 violations
+    if (violationCount === 3) {
+      reportViolationsToBackend(violationRef.current)
+    }
+
     // Warn at threshold
     if (violationCount === VIOLATION_THRESHOLD) {
       toast.error(`⚠️ Assessment Violation #${violationCount}: ${type}`, {
-        description: "Suspicious activity detected. Further violations may result in auto-submission.",
+        description: "Suspicious activity detected. One more violation will disable your test.",
       })
     }
-
-    // Auto-submit if max violations exceeded
-    if (violationCount >= MAX_VIOLATIONS_BEFORE_AUTO_SUBMIT) {
-      toast.error("❌ Maximum violations exceeded. Assessment auto-submitted.", {
-        description: "Your responses have been submitted. This incident has been recorded.",
-      })
-      handleSubmit()
-    }
-  }, [])
+  }, [reportViolationsToBackend])
 
   // ─── Fetch Test Data on Mount ───────────────────────────────────────────
   useEffect(() => {
@@ -86,15 +145,41 @@ export default function AssessmentPage() {
         )
         
         const assessmentData = response.data
+        
+        // Normalize question types: convert questionType to type
+        if (assessmentData.questions) {
+          assessmentData.questions = assessmentData.questions.map((q: any) => ({
+            ...q,
+            type: q.type || q.questionType,
+          }))
+        }
+        
         setAssessment(assessmentData)
         
-        // Set timer based on test data or default
-        const timeLimit = assessmentData.timeLimit || DEFAULT_TIME_LIMIT
-        setTimeLeft(timeLimit * 60)
+        // Check if already submitted
+        if (assessmentData.status === "submitted") {
+          setIsAlreadySubmitted(true)
+          toast.info("This assessment has already been submitted.", {
+            description: "You can view your results below.",
+          })
+          setState("results")
+          return
+        }
+        
+        // Initialize question timers (2 minutes each)
+        const timers: Record<string, number> = {}
+        assessmentData.questions?.forEach((q: any) => {
+          timers[q.id] = TIME_PER_QUESTION
+        })
+        setQuestionTimers(timers)
+        setTimeLeft(TIME_PER_QUESTION)
         
         // Show skills information if available
         if (assessmentData.matchedSkills && assessmentData.matchedSkills.length > 0) {
-          toast.success(`Assessment loaded for: ${assessmentData.matchedSkills.join(", ")}`)
+          const totalTime = (assessmentData.questions?.length || 0) * 2
+          toast.success(`Assessment loaded: ${totalTime} min total (2 min per question)`, {
+            description: assessmentData.matchedSkills.join(", ")
+          })
         }
         
         setState("instructions")
@@ -318,23 +403,53 @@ export default function AssessmentPage() {
   }, [state, recordViolation])
 
   // ─── Timer ──────────────────────────────────────────────────────────────
+  // Reset timer when question changes
   useEffect(() => {
-    if (state !== "taking" || timeLeft <= 0) return
+    if (state !== "taking" || !assessment) return
+    
+    const currentQ = assessment.questions[currentQuestionIndex]
+    if (currentQ) {
+      setTimeLeft(TIME_PER_QUESTION)
+    }
+  }, [currentQuestionIndex, state, assessment])
+
+  // Countdown timer for current question
+  useEffect(() => {
+    if (state !== "taking" || timeLeft <= 0 || !assessment) return
 
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
-          handleSubmit()
-          return 0
+        const newTime = prev - 1
+        
+        if (newTime <= 0) {
+          // Time's up - check if last question
+          if (currentQuestionIndex >= assessment.questions.length - 1) {
+            // Last question - auto-submit entire assessment
+            if (!submitRef.current && !isSubmitting) {
+              submitRef.current = true
+              toast.error("Time's up! Auto-submitting assessment...", {
+                duration: 2000,
+              })
+              setTimeout(() => handleSubmit(), 500)
+            }
+            return 0
+          } else {
+            // Not last question - move to next
+            toast.warning("Time's up for this question. Moving to next...", {
+              duration: 2000,
+            })
+            setCurrentQuestionIndex(currentQuestionIndex + 1)
+            return TIME_PER_QUESTION
+          }
         }
-        return prev - 1
+        return newTime
       })
     }, 1000)
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
-  }, [state, timeLeft])
+  }, [state, timeLeft, currentQuestionIndex, assessment, isSubmitting])
 
   // ─── Prevent Window Close / Navigation Away ──────────────────────────────
   useEffect(() => {
@@ -358,6 +473,7 @@ export default function AssessmentPage() {
 
   const handleStartAssessment = async () => {
     await enterFullscreen()
+    setAssessmentStartTime(Date.now())
     setState("taking")
   }
 
@@ -384,51 +500,135 @@ export default function AssessmentPage() {
   }
 
   const handleNextQuestion = () => {
+    const currentQuestion = assessment?.questions[currentQuestionIndex]
+    
+    // Check if current question is answered
+    if (!currentQuestion || !answers[currentQuestion.id]) {
+      toast.warning("Please answer the current question before proceeding", {
+        duration: 2000,
+      })
+      return
+    }
+    
     if (assessment && currentQuestionIndex < assessment.questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1)
     }
   }
 
   const handlePreviousQuestion = () => {
+    const currentQuestion = assessment?.questions[currentQuestionIndex]
+    
+    // Check if current question is answered
+    if (!currentQuestion || !answers[currentQuestion.id]) {
+      toast.warning("Please answer the current question before proceeding", {
+        duration: 2000,
+      })
+      return
+    }
+    
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1)
     }
   }
 
-  const handleSubmit = () => {
-    if (!assessment?.questions) return
+  const handleSubmit = async () => {
+    if (!assessment?.questions || isSubmitting) return
 
-    // Only score MCQ questions
-    let correctCount = 0
-    let mcqCount = 0
-    
-    assessment.questions.forEach((question: any) => {
-      if (question.type === "mcq") {
-        mcqCount++
-        const answer = answers[question.id]
-        if (answer?.selectedAnswerIndex === question.correctAnswer) {
-          correctCount++
+    setIsSubmitting(true)
+
+    // Show loading toast
+    const toastId = toast.loading("Submitting your assessment...")
+
+    try {
+      // Calculate durations
+      const assessmentEndTime = Date.now()
+      const totalDurationSeconds = assessment.questions.length * TIME_PER_QUESTION
+      const timeSpentSeconds = assessmentStartTime 
+        ? Math.floor((assessmentEndTime - assessmentStartTime) / 1000)
+        : totalDurationSeconds
+
+      // Only score MCQ questions
+      let correctCount = 0
+      let mcqCount = 0
+      
+      assessment.questions.forEach((question: any) => {
+        const qType = getQuestionType(question)
+        if (qType === "mcq") {
+          mcqCount++
+          const answer = answers[question.id]
+          if (answer?.selectedAnswerIndex === question.correctAnswer) {
+            correctCount++
+          }
         }
-      }
-    })
+      })
 
-    const scorePercentage = mcqCount > 0 ? Math.round((correctCount / mcqCount) * 100) : 0
-    const isPassed = scorePercentage >= (assessment?.passingScore || 70)
+      const scorePercentage = mcqCount > 0 ? Math.round((correctCount / mcqCount) * 100) : 0
+      const isPassed = scorePercentage >= (assessment?.passingScore || 70)
 
-    setScore(scorePercentage)
-    setPassed(isPassed)
+      // Build answers object for API submission
+      const submissionAnswers: Record<string, string | number> = {}
+      Object.entries(answers).forEach(([questionId, answer]) => {
+        if (answer.type === "mcq" && answer.selectedAnswerIndex !== undefined) {
+          const question = assessment.questions.find((q: any) => q.id === questionId)
+          if (question?.options) {
+            submissionAnswers[questionId] = question.options[answer.selectedAnswerIndex]
+          }
+        } else if (answer.freeTextAnswer !== undefined) {
+          submissionAnswers[questionId] = answer.freeTextAnswer
+        }
+      })
 
-    // TODO: Submit to backend API with violations data
-    // POST /recruitment/assessment/submit
-    // payload: { applicationId, assessmentId, answers, score, passed, violations }
+      // Submit to backend
+      const response = await apiFetch<{ data: Assessment }>(
+        ENDPOINTS.SUBMIT_TEST,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            jobApplicationId: applicationId,
+            answers: submissionAnswers,
+            violations: violationRef.current,
+            totalDurationSeconds,
+            timeSpentSeconds,
+          }),
+        }
+      )
 
-    setState("results")
+      // Update state with response data
+      setScore(scorePercentage)
+      setPassed(isPassed)
+      
+      // Show success screen first
+      setJustSubmitted(true)
+      setState("submitting")
+      
+      // Wait 3 seconds then redirect to dashboard
+      setTimeout(() => {
+        exitFullscreen()
+        router.push("/")
+      }, 3000)
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Failed to submit assessment"
+      toast.error("Submission failed", {
+        id: toastId,
+        description: errorMsg,
+      })
+      console.error("Assessment submission error:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleFinish = async () => {
     await exitFullscreen()
     router.push("/")
   }
+
+  // ─── Auto-submit trigger from violations ────────────────────────────────
+  useEffect(() => {
+    if (shouldAutoSubmit && !isSubmitting) {
+      handleSubmit()
+    }
+  }, [shouldAutoSubmit, isSubmitting, handleSubmit])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -439,6 +639,10 @@ export default function AssessmentPage() {
   const totalAnswered = Object.keys(answers).length
   const allMCQAnswered = assessment?.questions?.filter((q: any) => q.type === "mcq").every((q: any) => answers[q.id]) ?? false
   const isTimeAlmostUp = timeLeft < 300
+  
+  // Check if current question is answered
+  const currentQuestion = assessment?.questions[currentQuestionIndex]
+  const isCurrentQuestionAnswered = currentQuestion ? answers[currentQuestion.id] !== undefined : false
 
   // ─── Render States ──────────────────────────────────────────────────────
 
@@ -535,7 +739,8 @@ export default function AssessmentPage() {
               <h3 className="font-semibold text-sm text-blue-900 dark:text-blue-200">Assessment Details</h3>
               <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
                 <li>• Total Questions: {assessment.totalQuestions || assessment.questions?.length || 0}</li>
-                <li>• Time Limit: {assessment.timeLimit || DEFAULT_TIME_LIMIT} minutes</li>
+                <li>• Time Per Question: 2 minutes</li>
+                <li>• Total Time: {(assessment.questions?.length || 0) * 2} minutes</li>
                 <li>• Passing Score: {assessment.passingScore || 70}%</li>
               </ul>
             </div>
@@ -651,113 +856,62 @@ export default function AssessmentPage() {
 
         {/* Main Content */}
         <div className="flex-1 max-w-5xl mx-auto w-full space-y-6">
-          {/* Question Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{currentQuestion.question}</CardTitle>
-                </div>
-                {(currentQuestion.skillTag || currentQuestion.difficulty) && (
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    {currentQuestion.skillTag && (
-                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
-                        {currentQuestion.skillTag}
-                      </span>
-                    )}
-                    {currentQuestion.difficulty && (
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        currentQuestion.difficulty === "easy" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" :
-                        currentQuestion.difficulty === "medium" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300" :
-                        "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
-                      }`}>
-                        {currentQuestion.difficulty.charAt(0).toUpperCase() + currentQuestion.difficulty.slice(1)}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {currentQuestion.type === "mcq" ? (
-                <RadioGroup
-                  value={answers[currentQuestion.id]?.selectedAnswerIndex?.toString() ?? ""}
-                  onValueChange={(value) =>
-                    handleSelectAnswer(currentQuestion.id, parseInt(value))
-                  }
-                >
-                  <div className="space-y-3">
-                    {(currentQuestion.options ?? []).map((option, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-muted transition-colors"
-                      >
-                        <RadioGroupItem
-                          value={index.toString()}
-                          id={`option-${index}`}
-                        />
-                        <label
-                          htmlFor={`option-${index}`}
-                          className="flex-1 cursor-pointer text-sm"
-                        >
-                          {option}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
-              ) : (
-                <div className="space-y-3">
-                  <label htmlFor="free-input" className="text-sm font-medium">
-                    Your Answer
-                  </label>
-                  <Textarea
-                    id="free-input"
-                    placeholder={
-                      currentQuestion.type === "fill_blank"
-                        ? "Fill in the blank..."
-                        : "Type your answer here..."
-                    }
-                    value={answers[currentQuestion.id]?.freeTextAnswer ?? ""}
-                    onChange={(e) =>
-                      handleSetFreeTextAnswer(currentQuestion.id, e.target.value)
-                    }
-                    className="min-h-50 resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {currentQuestion.type === "fill_blank"
-                      ? "Fill in the blank space in the question above."
-                      : "This response will be reviewed by our assessment team."}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Question Type Renderer */}
+          {getQuestionType(currentQuestion) === "mcq" && (
+            <MCQQuestion
+              question={currentQuestion}
+              selectedAnswerIndex={answers[currentQuestion.id]?.selectedAnswerIndex}
+              onSelectAnswer={(index) => handleSelectAnswer(currentQuestion.id, index)}
+            />
+          )}
+
+          {getQuestionType(currentQuestion) === "fill_blank" && (
+            <FillBlankQuestion
+              question={currentQuestion}
+              answer={answers[currentQuestion.id]?.freeTextAnswer}
+              onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
+            />
+          )}
+
+          {getQuestionType(currentQuestion) === "descriptive" && (
+            <DescriptiveQuestion
+              question={currentQuestion}
+              answer={answers[currentQuestion.id]?.freeTextAnswer}
+              onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
+            />
+          )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Button
+          <div className="flex items-center justify-end gap-2 flex-wrap">
+            {/* <Button
               onClick={handlePreviousQuestion}
-              disabled={currentQuestionIndex === 0}
+              disabled={currentQuestionIndex === 0 || !isCurrentQuestionAnswered}
               variant="outline"
+              title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
             >
               Previous
-            </Button>
+            </Button> */}
 
-            <div className="text-sm text-muted-foreground">
+            {/* <div className="text-sm text-muted-foreground">
               {totalAnswered} of {assessment.questions.length} answered
-            </div>
+            </div> */}
 
             {currentQuestionIndex === assessment.questions.length - 1 ? (
               <Button
                 onClick={handleSubmit}
-                disabled={!allMCQAnswered}
+                disabled={!allMCQAnswered || isSubmitting}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                Submit Assessment
+                {isSubmitting ? "Submitting..." : "Submit Assessment"}
               </Button>
             ) : (
-              <Button onClick={handleNextQuestion}>Next</Button>
+              <Button 
+                onClick={handleNextQuestion}
+                disabled={!isCurrentQuestionAnswered}
+                title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
+              >
+                Next
+              </Button>
             )}
           </div>
 
@@ -771,18 +925,30 @@ export default function AssessmentPage() {
                 {assessment.questions.map((q, idx) => {
                   const isAnswered = answers[q.id] !== undefined
                   const isCurrent = idx === currentQuestionIndex
+                  const canNavigate = isAnswered || isCurrent
 
                   return (
                     <button
                       key={q.id}
-                      onClick={() => setCurrentQuestionIndex(idx)}
+                      onClick={() => {
+                        // Allow navigation if question is answered or is current
+                        if (canNavigate) {
+                          setCurrentQuestionIndex(idx)
+                        } else {
+                          toast.warning("Answer the current question first", {
+                            duration: 2000,
+                          })
+                        }
+                      }}
+                      disabled={!canNavigate}
                       className={`h-8 w-8 rounded text-xs font-semibold transition-colors ${
                         isCurrent
                           ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                           : isAnswered
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 cursor-pointer hover:opacity-80"
+                          : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
                       }`}
+                      title={!canNavigate ? "Answer the current question to unlock" : ""}
                     >
                       {idx + 1}
                     </button>
@@ -792,6 +958,85 @@ export default function AssessmentPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+    )
+  }
+
+  if (state === "violation_disabled") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-red-950/30">
+        <Card className="max-w-md border-red-200 dark:border-red-800/40">
+          <CardContent className="pt-6 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-20 h-20 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-10 w-10 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
+                Assessment Disabled
+              </h2>
+              <p className="text-muted-foreground">
+                Your assessment has been disabled due to suspicious activity (proctoring violations).
+              </p>
+            </div>
+
+            <div className="bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 rounded-lg p-4 space-y-2">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+                Violations Detected:
+              </p>
+              <ul className="text-xs text-red-600 dark:text-red-400 space-y-1">
+                {violations.map((v, idx) => (
+                  <li key={idx}>
+                    • {v.type}: {v.details || "Violation detected"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-4">
+              <p className="text-xs text-red-700 dark:text-red-300">
+                ⏱️ You will be logged out automatically in a few seconds. Please contact support if you believe this is an error.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (state === "submitting") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="relative">
+                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/50 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">Assessment Submitted!</h2>
+              <p className="text-muted-foreground">
+                Your assessment has been submitted successfully. We will get back to you soon.
+              </p>
+            </div>
+
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-lg p-4">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                ✓ Thank you for completing the assessment. Our team will review your responses and contact you with the results.
+              </p>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Redirecting to dashboard...
+            </p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -817,16 +1062,22 @@ export default function AssessmentPage() {
     const correctCount = Object.entries(answers)
       .filter(([qId, answer]) => {
         const question = assessment.questions.find((q: any) => q.id === qId)
-        return question?.type === "mcq" && answer.selectedAnswerIndex === question.correctAnswer
+        const qType = getQuestionType(question)
+        return qType === "mcq" && answer.selectedAnswerIndex === question?.correctAnswer
       })
       .length
     
-    const mcqCount = assessment.questions.filter((q: any) => q.type === "mcq").length
+    const mcqCount = assessment.questions.filter((q: any) => getQuestionType(q) === "mcq").length
 
     return (
       <div className="space-y-6 pb-12 max-w-2xl mx-auto p-4">
         {/* Result header */}
         <div className="text-center">
+          {isAlreadySubmitted && (
+            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400">
+              ✓ Already Submitted
+            </div>
+          )}
           <div
             className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
               passed
@@ -929,8 +1180,9 @@ export default function AssessmentPage() {
             {assessment.questions?.map((question: any, idx: number) => {
               const answer = answers[question.id]
               const notAnswered = !answer
+              const qType = getQuestionType(question)
               
-              if (question.type === "mcq") {
+              if (qType === "mcq") {
                 const isCorrect = answer?.selectedAnswerIndex === question.correctAnswer
                 
                 return (

@@ -793,7 +793,7 @@ All `error.tsx` files in the dashboard routes re-export this as the default expo
 <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
   <QueryProvider>                         // TanStack Query
     {children}
-    <Toaster position="bottom-right" richColors closeButton />   // sonner
+    <Toaster position="top-right" richColors closeButton />   // sonner
   </QueryProvider>
 </ThemeProvider>
 ```
