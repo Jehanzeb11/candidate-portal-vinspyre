@@ -1,15 +1,20 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertCircle,
   Play,
+  FileUp,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
 import { useAuthStore } from "@/features/auth/store"
 import { useCandidateProfile } from "@/features/auth/hooks/use-candidate-profile"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DocumentsUploadSection } from "@/components/documents/DocumentsUploadSection"
 
 // ─── Stage icon mapping ─────────────────────────────────────────────────────
 
@@ -37,8 +42,9 @@ const stageDescriptions: Record<string, string> = {
 
 function RecruitmentTracker() {
   const router = useRouter()
-  const { isLoading } = useCandidateProfile()
+  const { isLoading, refetch } = useCandidateProfile()
   const profile = useAuthStore((s) => s.profile)
+  const [docsOpen, setDocsOpen] = useState(false)
 
   if (isLoading) {
     return <DashboardSkeleton />
@@ -185,6 +191,36 @@ function RecruitmentTracker() {
                 <Play className="h-3.5 w-3.5" />
                 Start Assessment
               </Button>
+            </div>
+          ) : null
+        })()}
+
+        {/* Documents upload — show if in documents stage and not yet submitted */}
+        {recruitment.currentStage === "documents" && (() => {
+          const documentsStage = stages.find((s) => s.key === "documents")
+          const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
+          return !isDocsDone ? (
+            <div className="mt-6 space-y-3">
+              <Button
+                size="sm"
+                variant={docsOpen ? "secondary" : "default"}
+                className="gap-1.5"
+                onClick={() => setDocsOpen((prev) => !prev)}
+              >
+                <FileUp className="h-3.5 w-3.5" />
+                Upload Documents
+                {docsOpen ? (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                )}
+              </Button>
+
+              {docsOpen && (
+                <div className="rounded-xl border border-border bg-muted/20 p-4">
+                  <DocumentsUploadSection onSuccess={() => { setDocsOpen(false); void refetch() }} />
+                </div>
+              )}
             </div>
           ) : null
         })()}

@@ -71,5 +71,14 @@ export const POSITION_OPTIONS = [
   "QA / Test Automation Engineer",
   "Project Manager",
   "Other",
-];
+]
+
+export interface JobDetails {
+  id?: string
+  title?: string
+  description?: string
+  department?: string
+  location?: string
+  [key: string]: unknown
+};
 
