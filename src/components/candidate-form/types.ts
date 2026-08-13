@@ -74,11 +74,20 @@ export const POSITION_OPTIONS = [
 ]
 
 export interface JobDetails {
-  id?: string
-  title?: string
-  description?: string
-  department?: string
+  id: string
+  jobTitle: string
   location?: string
-  [key: string]: unknown
+  shiftTimings?: string
+  aboutRole?: string
+  keyResponsibilities?: string
+  qualification?: string
+  skills?: string[]
+  datePosted?: string
+  validTill?: string
+  jobClosedAt?: string | null
+  isActive?: boolean
+  formUrl?: string
+  createdAt?: string
+  updatedAt?: string
 };
 

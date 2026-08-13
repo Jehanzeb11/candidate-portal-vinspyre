@@ -328,7 +328,7 @@ export function CandidateApplicationForm({ jobTitle, jobId }: CandidateApplicati
 
         {/* Section 2 — Basic Info */}
         <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
-          <BasicInfoSection register={register} errors={errors} watch={watch} jobTitle={jobTitle} />
+          <BasicInfoSection register={register} errors={errors} watch={watch} hasReference={hasReference} jobTitle={jobTitle} />
         </div>
 
         {/* Section 3 — Educational Record */}

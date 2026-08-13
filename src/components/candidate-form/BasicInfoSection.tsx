@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UseFormRegister, FieldErrors, UseFormWatch, } from "react-hook-form";
+import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
 import {
   User,
   Mail,
@@ -25,6 +25,7 @@ interface BasicInfoSectionProps {
   register: UseFormRegister<CandidateFormValues>;
   errors: FieldErrors<CandidateFormValues>;
   watch: UseFormWatch<CandidateFormValues>;
+  hasReference: "yes" | "no" | "";
   jobTitle?: string;
 }
 
@@ -32,12 +33,9 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   register,
   errors,
   watch,
+  hasReference,
   jobTitle,
 }) => {
-const hasReference = watch("hasReference");
-
-console.log("hasReference:", hasReference);
-
 const [isReadOnly, setIsReadOnly] = useState(false);
 
   useEffect(() => {

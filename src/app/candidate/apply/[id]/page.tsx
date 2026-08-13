@@ -92,5 +92,5 @@ export default function CandidateApplyPage() {
     )
   }
 
-  return <CandidateApplicationForm jobTitle={jobDetails.title} jobId={jobId} />
+  return <CandidateApplicationForm jobTitle={jobDetails.jobTitle} jobId={jobId} />
 }
