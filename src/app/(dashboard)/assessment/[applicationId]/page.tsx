@@ -124,7 +124,7 @@ export default function AssessmentPage() {
     const violationCount = violationRef.current.length
 
     // Report to backend at exactly 3 violations
-    if (violationCount === 3) {
+    if (violationCount === 10) {
       reportViolationsToBackend(violationRef.current)
     }
 
@@ -143,9 +143,9 @@ export default function AssessmentPage() {
         const response = await apiFetch<{ data: Assessment }>(
           `${ENDPOINTS.GET_TEST}`
         )
-        
+
         const assessmentData = response.data
-        
+
         // Normalize question types: convert questionType to type
         if (assessmentData.questions) {
           assessmentData.questions = assessmentData.questions.map((q: any) => ({
@@ -153,9 +153,9 @@ export default function AssessmentPage() {
             type: q.type || q.questionType,
           }))
         }
-        
+
         setAssessment(assessmentData)
-        
+
         // Check if already submitted
         if (assessmentData.status === "submitted") {
           setIsAlreadySubmitted(true)
@@ -165,7 +165,7 @@ export default function AssessmentPage() {
           setState("results")
           return
         }
-        
+
         // Initialize question timers (2 minutes each)
         const timers: Record<string, number> = {}
         assessmentData.questions?.forEach((q: any) => {
@@ -173,7 +173,7 @@ export default function AssessmentPage() {
         })
         setQuestionTimers(timers)
         setTimeLeft(TIME_PER_QUESTION)
-        
+
         // Show skills information if available
         if (assessmentData.matchedSkills && assessmentData.matchedSkills.length > 0) {
           const totalTime = (assessmentData.questions?.length || 0) * 2
@@ -181,7 +181,7 @@ export default function AssessmentPage() {
             description: assessmentData.matchedSkills.join(", ")
           })
         }
-        
+
         setState("instructions")
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Failed to load assessment"
@@ -406,7 +406,7 @@ export default function AssessmentPage() {
   // Reset timer when question changes
   useEffect(() => {
     if (state !== "taking" || !assessment) return
-    
+
     const currentQ = assessment.questions[currentQuestionIndex]
     if (currentQ) {
       setTimeLeft(TIME_PER_QUESTION)
@@ -420,7 +420,7 @@ export default function AssessmentPage() {
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         const newTime = prev - 1
-        
+
         if (newTime <= 0) {
           // Time's up - check if last question
           if (currentQuestionIndex >= assessment.questions.length - 1) {
@@ -501,7 +501,7 @@ export default function AssessmentPage() {
 
   const handleNextQuestion = () => {
     const currentQuestion = assessment?.questions[currentQuestionIndex]
-    
+
     // Check if current question is answered
     if (!currentQuestion || !answers[currentQuestion.id]) {
       toast.warning("Please answer the current question before proceeding", {
@@ -509,7 +509,7 @@ export default function AssessmentPage() {
       })
       return
     }
-    
+
     if (assessment && currentQuestionIndex < assessment.questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1)
     }
@@ -517,7 +517,7 @@ export default function AssessmentPage() {
 
   const handlePreviousQuestion = () => {
     const currentQuestion = assessment?.questions[currentQuestionIndex]
-    
+
     // Check if current question is answered
     if (!currentQuestion || !answers[currentQuestion.id]) {
       toast.warning("Please answer the current question before proceeding", {
@@ -525,7 +525,7 @@ export default function AssessmentPage() {
       })
       return
     }
-    
+
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1)
     }
@@ -543,14 +543,14 @@ export default function AssessmentPage() {
       // Calculate durations
       const assessmentEndTime = Date.now()
       const totalDurationSeconds = assessment.questions.length * TIME_PER_QUESTION
-      const timeSpentSeconds = assessmentStartTime 
+      const timeSpentSeconds = assessmentStartTime
         ? Math.floor((assessmentEndTime - assessmentStartTime) / 1000)
         : totalDurationSeconds
 
       // Only score MCQ questions
       let correctCount = 0
       let mcqCount = 0
-      
+
       assessment.questions.forEach((question: any) => {
         const qType = getQuestionType(question)
         if (qType === "mcq") {
@@ -596,11 +596,11 @@ export default function AssessmentPage() {
       // Update state with response data
       setScore(scorePercentage)
       setPassed(isPassed)
-      
+
       // Show success screen first
       setJustSubmitted(true)
       setState("submitting")
-      
+
       // Wait 3 seconds then redirect to dashboard
       setTimeout(() => {
         exitFullscreen()
@@ -639,7 +639,7 @@ export default function AssessmentPage() {
   const totalAnswered = Object.keys(answers).length
   const allMCQAnswered = assessment?.questions?.filter((q: any) => q.type === "mcq").every((q: any) => answers[q.id]) ?? false
   const isTimeAlmostUp = timeLeft < 300
-  
+
   // Check if current question is answered
   const currentQuestion = assessment?.questions[currentQuestionIndex]
   const isCurrentQuestionAnswered = currentQuestion ? answers[currentQuestion.id] !== undefined : false
@@ -905,7 +905,7 @@ export default function AssessmentPage() {
                 {isSubmitting ? "Submitting..." : "Submit Assessment"}
               </Button>
             ) : (
-              <Button 
+              <Button
                 onClick={handleNextQuestion}
                 disabled={!isCurrentQuestionAnswered}
                 title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
@@ -941,13 +941,12 @@ export default function AssessmentPage() {
                         }
                       }}
                       disabled={!canNavigate}
-                      className={`h-8 w-8 rounded text-xs font-semibold transition-colors ${
-                        isCurrent
+                      className={`h-8 w-8 rounded text-xs font-semibold transition-colors ${isCurrent
                           ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                           : isAnswered
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 cursor-pointer hover:opacity-80"
-                          : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                      }`}
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 cursor-pointer hover:opacity-80"
+                            : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                        }`}
                       title={!canNavigate ? "Answer the current question to unlock" : ""}
                     >
                       {idx + 1}
@@ -1018,7 +1017,7 @@ export default function AssessmentPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">Assessment Submitted!</h2>
               <p className="text-muted-foreground">
@@ -1066,7 +1065,7 @@ export default function AssessmentPage() {
         return qType === "mcq" && answer.selectedAnswerIndex === question?.correctAnswer
       })
       .length
-    
+
     const mcqCount = assessment.questions.filter((q: any) => getQuestionType(q) === "mcq").length
 
     return (
@@ -1079,11 +1078,10 @@ export default function AssessmentPage() {
             </div>
           )}
           <div
-            className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-              passed
+            className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${passed
                 ? "bg-emerald-100 dark:bg-emerald-950/50"
                 : "bg-red-100 dark:bg-red-950/50"
-            }`}
+              }`}
           >
             {passed ? (
               <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
@@ -1181,20 +1179,19 @@ export default function AssessmentPage() {
               const answer = answers[question.id]
               const notAnswered = !answer
               const qType = getQuestionType(question)
-              
+
               if (qType === "mcq") {
                 const isCorrect = answer?.selectedAnswerIndex === question.correctAnswer
-                
+
                 return (
                   <div
                     key={question.id}
-                    className={`p-3 rounded-lg border ${
-                      notAnswered
+                    className={`p-3 rounded-lg border ${notAnswered
                         ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
                         : isCorrect
-                        ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30"
-                        : "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/30"
-                    }`}
+                          ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30"
+                          : "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/30"
+                      }`}
                   >
                     <div className="flex items-start gap-2 mb-2">
                       {notAnswered ? (
@@ -1250,11 +1247,10 @@ export default function AssessmentPage() {
                 return (
                   <div
                     key={question.id}
-                    className={`p-3 rounded-lg border ${
-                      notAnswered
+                    className={`p-3 rounded-lg border ${notAnswered
                         ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
                         : "border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-950/30"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start gap-2">
                       {notAnswered ? (

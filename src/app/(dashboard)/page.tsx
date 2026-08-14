@@ -195,11 +195,13 @@ function RecruitmentTracker() {
           ) : null
         })()}
 
-        {/* Documents upload — show if in documents stage and not yet submitted */}
+        {/* Documents upload — show if in documents stage, offer active, no prior submission */}
         {recruitment.currentStage === "documents" && (() => {
           const documentsStage = stages.find((s) => s.key === "documents")
           const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
-          return !isDocsDone ? (
+          const hasSubmitted = (profile?.candidateDocumentSubmissions?.length ?? 0) > 0
+          const canUpload = profile?.offerAccess?.canUploadDocuments ?? true
+          return !isDocsDone && !hasSubmitted && canUpload ? (
             <div className="mt-6 space-y-3">
               <Button
                 size="sm"

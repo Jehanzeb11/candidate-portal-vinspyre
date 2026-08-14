@@ -22,8 +22,8 @@ export interface CandidateJobApplication {
   portfolioLink?: string
   linkedInProfile?: string
   workedWithUsBefore?: boolean
-  referenceName?: string
-  referenceRelationship?: string
+  referenceName?: string | null
+  referenceRelationship?: string | null
   yearsOfExperience?: string
   educationalRecords?: CandidateEducationRecord[]
   employmentRecords?: CandidateEmploymentRecord[]
@@ -41,10 +41,48 @@ export interface CandidateJobApplication {
   reviewedByUserId?: string | null
   reviewedAt?: string | null
   rejectionReason?: string | null
+  interviewType?: string | null
+  interviewDateTime?: string | null
+  interviewLocation?: string | null
+  interviewInstructions?: string | null
   isDeleted?: boolean
   deletedAt?: string | null
   createdAt?: string
   updatedAt?: string
+}
+
+// ---------------------------------------------------------------------------
+// Document submission types
+// ---------------------------------------------------------------------------
+
+export interface CandidateDocumentSubmission {
+  id: string
+  candidateProfileId: string
+  candidateInterviewId: string
+  documents: string[]
+  status: "submitted" | "reviewed" | "rejected"
+  reviewedByUserId?: string | null
+  reviewedAt?: string | null
+  reviewNote?: string | null
+  rejectionReason?: string | null
+  submittedAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ---------------------------------------------------------------------------
+// Offer access types
+// ---------------------------------------------------------------------------
+
+export interface OfferAccess {
+  hasActiveOffer: boolean
+  canUploadDocuments: boolean
+  documentsTabEnabled: boolean
+  activeOfferId: string | null
+  activeOfferStatus: string | null
+  offerSentAt: string | null
+  offerCancelledAt: string | null
+  offerCancellationReason: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -74,13 +112,18 @@ export interface CandidateProfile {
   portfolioLink?: string
   linkedInProfile?: string
   workedWithUsBefore?: boolean
-  referenceName?: string
-  referenceRelationship?: string
+  referenceName?: string | null
+  referenceRelationship?: string | null
   yearsOfExperience?: string
   educationalRecords?: CandidateEducationRecord[]
   employmentRecords?: CandidateEmploymentRecord[]
   createdByUserId?: string | null
+  portalStatus?: string
+  portalSuspendedAt?: string | null
+  portalSuspendedReason?: string | null
   jobApplications?: CandidateJobApplication[]
+  candidateDocumentSubmissions?: CandidateDocumentSubmission[]
+  offerAccess?: OfferAccess
   recruitmentProgress?: RecruitmentProgress
   createdAt?: string
   updatedAt?: string
