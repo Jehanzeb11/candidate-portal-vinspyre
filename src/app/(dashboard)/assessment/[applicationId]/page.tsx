@@ -52,6 +52,7 @@ export default function AssessmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shouldAutoSubmit, setShouldAutoSubmit] = useState(false)
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false)
+const [screenRecordingDetected, setScreenRecordingDetected] = useState(false);
   const [questionTimers, setQuestionTimers] = useState<Record<string, number>>({})
   const [justSubmitted, setJustSubmitted] = useState(false)
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null)
@@ -111,6 +112,19 @@ export default function AssessmentPage() {
       console.error("Error reporting violations:", error)
     }
   }, [assessment])
+  useEffect(() => {
+  const handleRecorderStatus = (event: MessageEvent) => {
+    if (event.data?.type !== "SCREEN_RECORDER_STATUS") return;
+
+    setScreenRecordingDetected(event.data.recording === true);
+  };
+
+  window.addEventListener("message", handleRecorderStatus);
+
+  return () => {
+    window.removeEventListener("message", handleRecorderStatus);
+  };
+}, []);
 
   const recordViolation = useCallback((type: string, details?: string) => {
     const violation: ViolationRecord = {
@@ -471,6 +485,30 @@ export default function AssessmentPage() {
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
+  // ─── Screen Recording Detection ──────────────────────────────────────────
+  const checkScreenRecording = useCallback(async (): Promise<boolean> => {
+    try {
+      const stream = await (navigator.mediaDevices as any).getDisplayMedia({
+        video: { width: 1, height: 1 },
+        audio: false,
+      })
+      // Stop immediately — we only needed to know if a surface was accessible
+      stream.getTracks().forEach((t: MediaStreamTrack) => t.stop())
+      // Any granted share = recording/sharing is active
+      return true
+    } catch (err: any) {
+      // NotAllowedError → user denied = no active share → safe to proceed
+      // NotFoundError   → no display to share → safe to proceed
+      return false
+    }
+  }, [])
+
+  // Run check whenever the instructions screen is shown
+  useEffect(() => {
+    if (state !== "instructions") return
+    checkScreenRecording().then(setScreenRecordingDetected)
+  }, [state, checkScreenRecording])
+
   const handleStartAssessment = async () => {
     await enterFullscreen()
     setAssessmentStartTime(Date.now())
@@ -781,9 +819,32 @@ export default function AssessmentPage() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleStartAssessment} size="lg" className="w-full">
-          Start Assessment (Fullscreen)
-        </Button>
+        <div className="space-y-3">
+          {screenRecordingDetected && (
+            <Alert className="border-red-300 bg-red-50 dark:bg-red-950/30">
+              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+              <AlertDescription className="text-red-700 dark:text-red-200 text-sm ml-2">
+                <strong>Screen recording or sharing detected.</strong> Stop all recording/sharing software, then{" "}
+                <button
+                  onClick={() => checkScreenRecording().then(setScreenRecordingDetected)}
+                  className="underline font-semibold hover:no-underline"
+                >
+                  re-check
+                </button>
+                .
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button
+            onClick={handleStartAssessment}
+            size="lg"
+            className="w-full"
+            disabled={screenRecordingDetected}
+          >
+            Start Assessment (Fullscreen)
+          </Button>
+        </div>
       </div>
     )
   }

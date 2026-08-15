@@ -1,98 +1,159 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
-import {
-  Send,
-  CheckCircle2,
-  FileCheck,
-  RefreshCw,
-  Sparkles,
-} from "lucide-react";
+import { Send, CheckCircle2, FileCheck, RefreshCw, Sparkles } from "lucide-react";
 import { CandidateFormValues } from "./types";
-import { DropCvSection } from "./DropCvSection";
-import { BasicInfoSection } from "./BasicInfoSection";
-import { EducationSection } from "./EducationSection";
-import { EmploymentSection } from "./EmploymentSection";
+import { PersonalSection } from "./PersonalSection";
+import { ProfessionalSection } from "./ProfessionalSection";
+import { ResumeSection } from "./ResumeSection";
+import { Button } from "../ui/button";
 
-const CANDIDATE_PROFILE_API_URL =
+const API_URL =
   process.env.NEXT_PUBLIC_CANDIDATE_PROFILE_API_URL ??
   "http://192.168.18.106:5004/api/v1/recruitment/candidate-profile";
 
-const normalizeMoney = (value: string) => value.replaceAll(",", "").trim();
+const strip = (v: string | undefined) => v?.trim() ?? "";
+// FormData carries only strings; server parses "true"/"false" as booleans
+const toBool = (v: "yes" | "no" | "" | undefined) => (v === "yes" ? "true" : "false");
 
-const toBooleanString = (value: "yes" | "no" | "") => (value === "yes" ? "true" : "false");
+// ── Display label → API enum value maps ────────────────────────────────────
 
-const buildCandidateProfileFormData = (data: CandidateFormValues, jobId?: string) => {
-  const formData = new FormData();
-  const cvFile = data.cvFile?.[0];
-
-  formData.append("positionAppliedFor", data.positionAppliedFor.trim());
-  formData.append("fullName", data.fullName.trim());
-  formData.append("email", data.email.trim());
-  formData.append("phone", data.phone.trim());
-  formData.append("noticePeriod", data.noticePeriod.trim());
-  formData.append("earliestAvailableJoiningDate", data.joiningDate);
-  formData.append("currentSalaryPkr", normalizeMoney(data.currentSalary));
-  formData.append("expectedMonthlySalaryPkr", normalizeMoney(data.expectedSalary));
-  formData.append("reasonForLeavingLastJob", data.reasonForLeaving.trim());
-  formData.append("comfortableEveningShift", toBooleanString(data.comfortableEveningShift));
-
-  if (jobId) {
-    formData.append("jobId", jobId);
-  }
-
-  if (cvFile) {
-    formData.append("cv", cvFile);
-  }
-
-  if (data.coverLetter?.trim()) {
-    formData.append("coverLetter", data.coverLetter.trim());
-  }
-
-  if (data.portfolioUrl?.trim()) {
-    formData.append("portfolioLink", data.portfolioUrl.trim());
-  }
-
-  formData.append("linkedInProfile", data.linkedInUrl.trim());
-  formData.append("workedWithUsBefore", toBooleanString(data.workedWithUsBefore));
-  formData.append("hasReference", toBooleanString(data.hasReference));
-
-  // Only append reference details if user selected "yes"
-  if (data.hasReference === "yes") {
-    formData.append("referenceName", data.referenceName.trim());
-    formData.append("referenceRelationship", data.referenceRelationship.trim());
-  }
-
-  formData.append("yearsOfExperience", data.yearsOfExperience.trim());
-
-  const educationalRecords = data.educationHistory
-    .filter((record) => record.degreeTitle.trim())
-    .map((record) => ({
-      certificateOrDegree: record.degreeTitle.trim(),
-    }));
-
-  const employmentRecords = data.employmentHistory
-    .filter((record) => record.organizationName.trim() || record.position.trim())
-    .map((record) => ({
-      organizationName: record.organizationName.trim(),
-      position: record.position.trim(),
-    }));
-
-  formData.append("educationalRecords", JSON.stringify(educationalRecords));
-  formData.append("employmentRecords", JSON.stringify(employmentRecords));
-
-  return formData;
+const GENDER_API: Record<string, string> = {
+  "Male": "male",
+  "Female": "female",
+  "Rather not say": "rather_not_say",
 };
 
-interface CandidateApplicationFormProps {
-  jobTitle?: string;
-  jobId?: string;
+const MARITAL_STATUS_API: Record<string, string> = {
+  "Single": "single",
+  "Married": "married",
+  "Prefer Not to Say": "prefer_not_to_say",
+};
+
+const EDUCATION_API: Record<string, string> = {
+  "Primary Level": "primary_level",
+  "Intermediate": "intermediate",
+  "Diploma": "diploma",
+  "Bachelors": "bachelors",
+  "Masters": "masters",
+  "MPhil": "mphil",
+  "PhD": "phd",
+  "Other": "other",
+};
+
+const EXPERIENCE_API: Record<string, string> = {
+  "Fresher": "fresher",
+  "0 - 1 Year": "zero_to_one",
+  "1 - 2 Years": "one_to_two",
+  "2 - 3 Years": "two_to_three",
+  "3 - 4 Years": "three_to_four",
+  "4 - 5 Years": "four_to_five",
+  "5 - 7 Years": "five_to_seven",
+};
+
+const EMPLOYMENT_STATUS_API: Record<string, string> = {
+  "Employed full-time": "employed_full_time",
+  "Employed part-time": "employed_part_time",
+  "Freelancing / Contract work": "freelancing_contract",
+  "Unemployed": "unemployed",
+  "Student / Fresh Graduate": "student_fresh_graduate",
+  "On a career break": "on_career_break",
+  "Other": "other",
+};
+
+const JOB_SEEKING_API: Record<string, string> = {
+  "I am looking for a new opportunity": "looking_for_new_opportunity",
+  "I am exploring a secondary opportunity along with my current job": "exploring_secondary_opportunity",
+};
+
+const NOTICE_PERIOD_API: Record<string, string> = {
+  "None": "none",
+  "1 week": "one_week",
+  "2 weeks": "two_weeks",
+  "1 month": "one_month",
+  "2 months": "two_months",
+  "3+ months": "three_plus_months",
+};
+
+const HOW_DID_YOU_HEAR_API: Record<string, string> = {
+  "LinkedIn": "linkedin",
+  "Career Site": "career_site",
+  "Job Board (Indeed, Glassdoor, etc.)": "job_board",
+  "Referred by someone": "referred_by_someone",
+  "Company Website": "company_website",
+  "Career Placement Center / University": "career_placement_center_university",
+  "Recruiter reached out to me directly": "recruiter_reached_out",
+  "Social Media (Instagram, Twitter, etc.)": "social_media",
+  "Networking Event or Conference": "networking_event_conference",
+  "Other": "other",
+};
+
+/** Converts a display label to its API enum value; falls back to the raw value if not found. */
+const toApi = (map: Record<string, string>, value: string) => map[value] ?? value;
+
+function buildFormData(data: CandidateFormValues, jobId?: string): FormData {
+  const fd = new FormData();
+  const isFresher = data.yearsOfExperience === "Fresher";
+  const hideNotice =
+    isFresher ||
+    data.currentEmploymentStatus === "Unemployed" ||
+    data.currentEmploymentStatus === "On a career break";
+
+  fd.append("fullName", strip(data.fullName));
+  fd.append("email", strip(data.email));
+  fd.append("phone", strip(data.phone));
+  fd.append("address", strip(data.address));
+  fd.append("age", strip(data.age));
+  fd.append("gender", toApi(GENDER_API, data.gender));
+  fd.append("maritalStatus", toApi(MARITAL_STATUS_API, data.maritalStatus));
+  fd.append("linkedInProfile", strip(data.linkedInUrl));
+  if (data.portfolioUrl?.trim()) fd.append("portfolioLink", strip(data.portfolioUrl));
+
+  fd.append("highestEducation", toApi(EDUCATION_API, data.highestEducation));
+  fd.append("yearsOfExperience", toApi(EXPERIENCE_API, data.yearsOfExperience));
+  fd.append("expectedMonthlySalaryPkr", strip(data.expectedSalary).replaceAll(",", ""));
+
+  if (!isFresher) {
+    fd.append("currentSalaryPkr", strip(data.currentSalary).replaceAll(",", ""));
+    fd.append("currentEmploymentStatus", toApi(EMPLOYMENT_STATUS_API, data.currentEmploymentStatus ?? ""));
+    fd.append("jobSeekingStatus", toApi(JOB_SEEKING_API, data.jobSeekingStatus ?? ""));
+    fd.append("reasonForLeavingLastJob", strip(data.reasonForLeaving));
+    if (!hideNotice) fd.append("noticePeriod", toApi(NOTICE_PERIOD_API, data.noticePeriod ?? ""));
+    fd.append("organizationName", strip(data.organizationName));
+    fd.append("positionDesignation", strip(data.positionDesignation));
+    fd.append("workedWithUsBefore", toBool(data.workedWithUsBefore));
+  }
+
+  fd.append("earliestAvailableJoiningDate", data.joiningDate);
+  fd.append("heardAboutOpportunity", toApi(HOW_DID_YOU_HEAR_API, data.howDidYouHear));
+
+  const cv = data.cvFile?.[0];
+  if (cv) fd.append("cv", cv);
+
+  fd.append("positionAppliedFor", strip(data.positionAppliedFor));
+  if (jobId) fd.append("jobId", jobId);
+
+  if (data.coverLetter?.trim()) fd.append("coverLetter", strip(data.coverLetter));
+
+  fd.append("comfortableEveningShift", toBool(data.comfortableEveningShift));
+  fd.append("hasReference", toBool(data.hasReference));
+  if (data.hasReference === "yes") {
+    fd.append("referenceName", strip(data.referenceName));
+    fd.append("referenceRelationship", strip(data.referenceRelationship));
+  }
+
+  return fd;
 }
 
-export function CandidateApplicationForm({ jobTitle, jobId }: CandidateApplicationFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+interface Props {
+  jobTitle?: string;
+  jobId?: string;
+  validTill?: string;
+}
+
+export function CandidateApplicationForm({ jobTitle, jobId, validTill }: Props) {
   const [submittedData, setSubmittedData] = useState<CandidateFormValues | null>(null);
 
   const {
@@ -100,51 +161,57 @@ export function CandidateApplicationForm({ jobTitle, jobId }: CandidateApplicati
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<CandidateFormValues>({
     mode: "onTouched",
     shouldUnregister: false,
     defaultValues: {
-      positionAppliedFor: "",
       fullName: "",
       email: "",
       phone: "",
-      noticePeriod: "",
-      joiningDate: "",
+      address: "",
+      age: "",
+      gender: "",
+      maritalStatus: "",
+      linkedInUrl: "",
+      portfolioUrl: "",
+      highestEducation: "",
+      yearsOfExperience: "",
       currentSalary: "",
       expectedSalary: "",
+      currentEmploymentStatus: "",
+      jobSeekingStatus: "",
       reasonForLeaving: "",
-      comfortableEveningShift: "",
+      noticePeriod: "",
+      joiningDate: "",
+      howDidYouHear: "",
       cvFile: null,
-      coverLetter: "",
-      portfolioUrl: "",
-      linkedInUrl: "",
+      positionAppliedFor: "",
+      comfortableEveningShift: "",
       workedWithUsBefore: "",
       hasReference: "",
       referenceName: "",
       referenceRelationship: "",
-      yearsOfExperience: "",
-      educationHistory: [
-        { degreeTitle: "", institution: "", yearCompleted: "", gradeOrCgpa: "" },
-      ],
-      employmentHistory: [
-        { organizationName: "", position: "", duration: "", responsibilities: "" },
-      ],
+      organizationName: "",
+      positionDesignation: "",
+      coverLetter: "",
     },
   });
 
-  // Watch hasReference to trigger re-renders in parent, which propagates to children
-  watch("hasReference");
-
+  const yearsOfExperience = watch("yearsOfExperience");
+  const currentEmploymentStatus = watch("currentEmploymentStatus");
   const hasReference = watch("hasReference");
 
+  const isFresher = yearsOfExperience === "Fresher";
+  const hideNotice =
+    isFresher ||
+    currentEmploymentStatus === "Unemployed" ||
+    currentEmploymentStatus === "On a career break";
+
   useEffect(() => {
-    if (jobTitle) {
-      setValue("positionAppliedFor", jobTitle);
-    }
+    if (jobTitle) setValue("positionAppliedFor", jobTitle);
   }, [jobTitle, setValue]);
 
-  // Clear reference fields when user selects "No"
   useEffect(() => {
     if (hasReference === "no") {
       setValue("referenceName", "");
@@ -153,105 +220,43 @@ export function CandidateApplicationForm({ jobTitle, jobId }: CandidateApplicati
   }, [hasReference, setValue]);
 
   const onSubmit: SubmitHandler<CandidateFormValues> = async (data) => {
-    setIsSubmitting(true);
-    const toastId = toast.loading("Submitting your application...");
+    const toastId = toast.loading("Submitting your application…");
     try {
-      const response = await fetch(CANDIDATE_PROFILE_API_URL, {
+      const res = await fetch(API_URL, {
         method: "POST",
-        body: buildCandidateProfileFormData(data, jobId),
+        body: buildFormData(data, jobId),
       });
-
-      const responseText = await response.text();
-      let responseMessage = response.ok
-        ? "Application submitted successfully!"
-        : response.statusText || "Submission failed. Please try again.";
-
-      if (responseText) {
-        try {
-          const parsedResponse = JSON.parse(responseText) as { message?: string };
-          if (parsedResponse?.message) {
-            responseMessage = parsedResponse.message;
-          }
-        } catch {
-          // Ignore non-JSON responses and use the default message.
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(responseMessage);
-      }
-
-      toast.success(responseMessage, { 
-        id: toastId,
-        duration: 5000,
-      });
+      const text = await res.text();
+      let message = res.ok ? "Application submitted successfully!" : res.statusText;
+      try {
+        const parsed = JSON.parse(text) as { message?: string };
+        if (parsed?.message) message = parsed.message;
+      } catch { /* non-JSON */ }
+      if (!res.ok) throw new Error(message);
+      toast.success(message, { id: toastId, duration: 5000 });
       setSubmittedData(data);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Submission failed. Please try again.";
-      toast.error(message, { 
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Submission failed.", {
         id: toastId,
         duration: 5000,
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  // if (submittedData) {
-  //   return (
-  //     <div className="max-w-4xl mx-auto bg-white border border-slate-200/90 rounded-2xl shadow-2xl p-5 md:p-8 text-slate-800">
-  //       <div className="text-center space-y-3 mb-6">
-  //         <div className="w-14 h-14 md:w-16 md:h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-200 shadow-sm">
-  //           <CheckCircle2 className="w-8 h-8 md:w-10 md:h-10" />
-  //         </div>
-  //         <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">Application Submitted!</h2>
-  //         <p className="text-slate-500 text-xs md:text-sm max-w-lg mx-auto">
-  //           Thank you, <span className="font-semibold text-slate-800">{submittedData.fullName}</span>. Your application for{" "}
-  //           <span className="text-[#d81b60] font-bold">{submittedData.positionAppliedFor}</span> has been received.
-  //         </p>
-  //       </div>
-
-  //       <div className="bg-[#f8f9fa] border border-slate-200/90 rounded-xl p-4 md:p-6 space-y-4 shadow-sm">
-  //         <h3 className="text-base md:text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-  //           <FileCheck className="w-5 h-5 text-[#d81b60]" />
-  //           Submitted Details Summary
-  //         </h3>
-
-  //         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
-  //           {[
-  //             { label: "Full Name", value: submittedData.fullName },
-  //             { label: "Email Address", value: submittedData.email },
-  //             { label: "Phone Number", value: submittedData.phone },
-  //             { label: "Position Applied For", value: submittedData.positionAppliedFor },
-  //             { label: "Years of Experience", value: submittedData.yearsOfExperience },
-  //             { label: "Current Salary", value: `PKR ${submittedData.currentSalary}` },
-  //             { label: "Expected Salary", value: `PKR ${submittedData.expectedSalary}` },
-  //             { label: "Notice Period", value: submittedData.noticePeriod },
-  //             { label: "Evening Shift", value: submittedData.comfortableEveningShift?.toUpperCase() },
-  //           ].map(({ label, value }) => (
-  //             <div key={label}>
-  //               <span className="text-slate-400 block text-[10px] md:text-[11px] font-bold uppercase tracking-wider">{label}</span>
-  //               <span className="font-semibold text-slate-800">{value}</span>
-  //             </div>
-  //           ))}
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
+  // ── Success screen ────────────────────────────────────────────────────────
   if (submittedData) {
     return (
-      <div className="max-w-4xl mx-auto bg-white border border-slate-200/90 rounded-2xl shadow-2xl p-5 md:p-8 text-slate-800">
-        <div className="text-center space-y-4 mb-8">
+      <div className="max-w-4xl mx-auto bg-white border border-slate-200/90 rounded-2xl shadow-2xl p-5 md:p-8 text-slate-800 md:my-4 m-2">
+        <div className="text-center space-y-2 mb-8">
           <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto border-2 border-emerald-300 shadow-lg">
             <CheckCircle2 className="w-10 h-10 md:w-12 md:h-12" />
           </div>
           <div className="space-y-2">
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">Thank You for Submitting!</h2>
+            <h3 className="text-[#d81b60] text-2xl md:text-3xl font-bold">{submittedData.positionAppliedFor}</h3>
             <p className="text-slate-600 text-sm md:text-base max-w-lg mx-auto leading-relaxed">
-              Dear <span className="font-semibold text-slate-900">{submittedData.fullName}</span>, we've received your application for the position of{" "}
-              <span className="text-[#d81b60] font-bold">{submittedData.positionAppliedFor}</span>.
+              Dear <span className="font-semibold text-slate-900">{submittedData.fullName}</span>, we've received your
+              application.
             </p>
           </div>
         </div>
@@ -262,10 +267,10 @@ export function CandidateApplicationForm({ jobTitle, jobId }: CandidateApplicati
             What happens next?
           </h3>
           <ul className="text-sm text-emerald-800 space-y-2 ml-7">
-            <li>✓ Your application has been successfully submitted to our system</li>
-            <li>✓ Our recruitment team will review your application within 3-5 business days</li>
-            <li>✓ You'll receive an email notification at <span className="font-semibold">{submittedData.email}</span> with updates</li>
-            <li>✓ Keep an eye on your inbox (including spam folder) for further instructions</li>
+            <li>✓ Your application has been successfully submitted</li>
+            <li>✓ Our recruitment team will review within 1–2 business days</li>
+            <li>✓ You'll receive updates at <span className="font-semibold">{submittedData.email}</span></li>
+            {/* <li>✓ Check your inbox (including spam) for further instructions</li> */}
           </ul>
         </div>
 
@@ -274,16 +279,13 @@ export function CandidateApplicationForm({ jobTitle, jobId }: CandidateApplicati
             <FileCheck className="w-5 h-5 text-[#d81b60]" />
             Application Summary
           </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             {[
               { label: "Full Name", value: submittedData.fullName },
-              { label: "Email Address", value: submittedData.email },
-              { label: "Phone Number", value: submittedData.phone },
-              { label: "Position Applied For", value: submittedData.positionAppliedFor },
-              { label: "Years of Experience", value: submittedData.yearsOfExperience || "N/A" },
-              { label: "Notice Period", value: submittedData.noticePeriod || "N/A" },
-              { label: "Current Salary", value: submittedData.currentSalary ? `PKR ${submittedData.currentSalary}` : "N/A" },
+              { label: "Email", value: submittedData.email },
+              { label: "Phone", value: submittedData.phone },
+              { label: "Position", value: submittedData.positionAppliedFor },
+              { label: "Experience", value: submittedData.yearsOfExperience || "N/A" },
               { label: "Expected Salary", value: submittedData.expectedSalary ? `PKR ${submittedData.expectedSalary}` : "N/A" },
             ].map(({ label, value }) => (
               <div key={label} className="pb-3 border-b border-slate-200 last:border-0">
@@ -294,64 +296,70 @@ export function CandidateApplicationForm({ jobTitle, jobId }: CandidateApplicati
           </div>
         </div>
 
-        <div className="mt-8 text-center text-slate-600 text-sm">
-          <p>If you have any questions, please don't hesitate to reach out to us.</p>
+        <div className="mt-4 mb-2 text-center text-slate-600 text-sm">
+          <p>If you have any questions, feel free to reach out.</p>
           <p className="mt-2 text-slate-500">Best of luck! 🚀</p>
         </div>
       </div>
     );
   }
 
+  // ── Form ──────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Page Header */}
+    <div className="xl:min-w-6xl max-w-6xl py-10">
+      {/* Header */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 shadow-sm">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-100 text-[#d81b60] text-[10px] sm:text-xs font-bold rounded-full mb-2 sm:mb-3 uppercase tracking-wider">
           <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           Join Our Team
         </div>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Candidate Application Form
+          Candidate Application Form  <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#d81b60] tracking-tight">(
+          {jobTitle})
+        </span>
         </h1>
+       
         <p className="text-slate-500 text-xs sm:text-sm mt-1">
-          Fill in all sections below and submit your application in one go.
+          Fill in all sections below and submit your application.
         </p>
       </div>
 
-      {/* Single Page Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
-
-        {/* Section 1 — Drop Your CV */}
+        {/* Section 1 — Personal Info */}
         <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
-          <DropCvSection register={register} errors={errors} setValue={setValue} />
+          <PersonalSection register={register} errors={errors} watch={watch} setValue={setValue} />
         </div>
 
-        {/* Section 2 — Basic Info */}
+        {/* Section 2 — Professional Info */}
         <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
-          <BasicInfoSection register={register} errors={errors} watch={watch} hasReference={hasReference} jobTitle={jobTitle} />
+          <ProfessionalSection
+            register={register}
+            errors={errors}
+            watch={watch}
+            isFresher={isFresher}
+            hideNotice={hideNotice}
+            hasReference={hasReference}
+            jobTitle={jobTitle}
+            validTill={validTill}
+          />
         </div>
 
-        {/* Section 3 — Educational Record */}
+        {/* Section 3 — Resume */}
         <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
-          <EducationSection register={register} errors={errors} />
+          <ResumeSection register={register} errors={errors} setValue={setValue} />
         </div>
 
-        {/* Section 4 — Employment Record */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
-          <EmploymentSection register={register} errors={errors} />
-        </div>
-
-        {/* Submit Button */}
+        {/* Submit */}
         <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-4 sm:p-5">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3.5 bg-[#d81b60] hover:bg-[#c2185b] text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="cursor-pointer w-full py-3.5 bg-[#d81b60] hover:bg-[#c2185b] text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Submitting...
+                Submitting…
               </>
             ) : (
               <>

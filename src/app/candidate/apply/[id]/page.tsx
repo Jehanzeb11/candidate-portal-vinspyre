@@ -92,5 +92,5 @@ export default function CandidateApplyPage() {
     )
   }
 
-  return <CandidateApplicationForm jobTitle={jobDetails.jobTitle} jobId={jobId} />
+  return <div className="flex items-center w-full justify-center"><CandidateApplicationForm jobTitle={jobDetails.jobTitle} jobId={jobId} validTill={jobDetails.validTill ?? undefined} /></div>
 }

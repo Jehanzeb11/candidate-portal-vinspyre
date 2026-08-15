@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from "@/features/auth/store"
 import { apiFetch } from "@/lib/api-fetch"
 import { cn } from "@/utils/cn"
+import { useRouter } from "next/navigation"
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +92,8 @@ function PasswordField({
 
 export function ChangePasswordModal() {
   const isPasswordUpdated = useAuthStore((s) => s.isPasswordUpdated)
-
+  const [dismissed, setDismissed] = useState(false)
+  const router = useRouter()
   const {
     register,
     handleSubmit,
@@ -113,20 +115,22 @@ export function ChangePasswordModal() {
 
       toast.success("Password updated. Please log in with your new password.")
       // Clear session — user must re-authenticate with the new password
-      useAuthStore.getState().clearUser()
-      window.location.href = "/login"
+      // useAuthStore.getState().clearUser()
+      // window.location.href = "/login"
+      router.refresh()
+      
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update password.")
     }
   }
 
-  // Modal is open as long as password has not been updated
-  const open = !isPasswordUpdated
-
   return (
-    <Dialog open={open}>
+    <Dialog
+      open={!isPasswordUpdated && !dismissed}
+      onOpenChange={(open) => { if (!open) setDismissed(true) }}
+    >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={true}
         className="sm:max-w-md"
       >
         <DialogHeader>
