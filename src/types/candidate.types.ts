@@ -12,6 +12,23 @@ export interface CandidateEmploymentRecord {
   position: string
 }
 
+export interface CandidateInterview {
+  id: string
+  candidateProfileId?: string
+  jobApplicationId?: string
+  candidateTestId?: string
+  roundType?: string
+  roundNumber?: number
+  parentInterviewId?: string | null
+  status?: string
+  offerStatus?: string
+  offerSentAt?: string | null
+  offerCancelledAt?: string | null
+  offerCancellationReason?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface CandidateJobApplication {
   id: string
   candidateProfileId: string
@@ -19,8 +36,13 @@ export interface CandidateJobApplication {
   fullName: string
   email: string
   phone?: string
+  address?: string
+  age?: number
+  gender?: string
+  maritalStatus?: string
   portfolioLink?: string
   linkedInProfile?: string
+  highestEducation?: string
   workedWithUsBefore?: boolean
   referenceName?: string | null
   referenceRelationship?: string | null
@@ -32,11 +54,16 @@ export interface CandidateJobApplication {
   earliestAvailableJoiningDate?: string
   currentSalaryPkr?: number
   expectedMonthlySalaryPkr?: number
+  currentEmploymentStatus?: string
+  jobSeekingStatus?: string
   reasonForLeavingLastJob?: string
+  heardAboutOpportunity?: string
   comfortableEveningShift?: boolean
   cv?: string
   cvUrl?: string
   coverLetter?: string
+  organizationName?: string
+  positionDesignation?: string
   status?: string
   reviewedByUserId?: string | null
   reviewedAt?: string | null
@@ -194,6 +221,11 @@ export interface CandidateProfile {
   fullName: string
   email: string
   phone?: string
+  address?: string
+  age?: number
+  gender?: string
+  maritalStatus?: string
+  highestEducation?: string
   portfolioLink?: string
   linkedInProfile?: string
   workedWithUsBefore?: boolean
@@ -207,6 +239,8 @@ export interface CandidateProfile {
   portalSuspendedAt?: string | null
   portalSuspendedReason?: string | null
   jobApplications?: CandidateJobApplication[]
+  candidateTests?: { id: string; status?: string; violationCount?: number }[]
+  candidateInterviews?: CandidateInterview[]
   candidateDocumentSubmissions?: CandidateDocumentSubmission[]
   candidateOnboardings?: CandidateOnboarding[]
   offerAccess?: OfferAccess

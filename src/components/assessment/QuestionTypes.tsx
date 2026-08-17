@@ -23,7 +23,7 @@ export function MCQQuestion({
           <div className="flex-1">
             <CardTitle className="text-lg">{question.question}</CardTitle>
           </div>
-          {(question.skillTag || question.difficulty) && (
+          {/* {(question.skillTag || question.difficulty) && (
             <div className="flex flex-wrap gap-2 justify-end">
               {question.skillTag && (
                 <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
@@ -44,7 +44,7 @@ export function MCQQuestion({
                 </span>
               )}
             </div>
-          )}
+          )} */}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -79,13 +79,23 @@ interface FillBlankQuestionProps {
 
 export function FillBlankQuestion({ question, answer, onAnswerChange }: FillBlankQuestionProps) {
   return (
-    <Card>
+    <Card className="pt-0">
+      {/* <div className="px-3">
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg p-3">
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2">
+              💡 Fill in the Blank
+            </p>
+            <p className="text-sm text-amber-800 dark:text-amber-300">
+              Complete the statement above by filling in the blank space.
+            </p>
+          </div>
+      </div> */}
       <CardHeader>
         <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1">
+          {/* <div className="flex-1">
             <CardTitle className="text-lg">{question.question}</CardTitle>
-          </div>
-          {(question.skillTag || question.difficulty) && (
+          </div> */}
+          {/* {(question.skillTag || question.difficulty) && (
             <div className="flex flex-wrap gap-2 justify-end">
               {question.skillTag && (
                 <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
@@ -106,20 +116,12 @@ export function FillBlankQuestion({ question, answer, onAnswerChange }: FillBlan
                 </span>
               )}
             </div>
-          )}
+          )} */}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-3">
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg p-3">
-            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2">
-              💡 Fill in the Blank
-            </p>
-            <p className="text-sm text-amber-800 dark:text-amber-300">
-              Complete the statement above by filling in the blank space.
-            </p>
-          </div>
-
+      <CardContent>
+       
+        
           <div>
             <label htmlFor="fill-blank" className="text-sm font-medium block mb-2">
               Your Answer
@@ -135,7 +137,6 @@ export function FillBlankQuestion({ question, answer, onAnswerChange }: FillBlan
               Be concise and accurate with your answer.
             </p>
           </div>
-        </div>
       </CardContent>
     </Card>
   )
@@ -153,13 +154,25 @@ export function DescriptiveQuestion({
   onAnswerChange,
 }: DescriptiveQuestionProps) {
   return (
-    <Card>
+    <Card className="pt-0">
+      {/* <div className="px-3">
+
+      <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/40 rounded-lg p-3">
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
+              📝 Descriptive Answer Required
+            </p>
+            <p className="text-sm text-indigo-800 dark:text-indigo-300">
+              Provide a detailed, well-thought-out response to the question above.
+            </p>
+      </div>
+          </div> */}
       <CardHeader>
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1">
+        <div className="flex items-start justify-between ">
+          
+          {/* <div className="flex-1">
             <CardTitle className="text-lg">{question.question}</CardTitle>
-          </div>
-          {(question.skillTag || question.difficulty) && (
+          </div> */}
+          {/* {(question.skillTag || question.difficulty) && (
             <div className="flex flex-wrap gap-2 justify-end">
               {question.skillTag && (
                 <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded text-xs font-medium">
@@ -180,19 +193,11 @@ export function DescriptiveQuestion({
                 </span>
               )}
             </div>
-          )}
+          )} */}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-3">
-          <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/40 rounded-lg p-3">
-            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
-              📝 Descriptive Answer Required
-            </p>
-            <p className="text-sm text-indigo-800 dark:text-indigo-300">
-              Provide a detailed, well-thought-out response to the question above.
-            </p>
-          </div>
+      <CardContent>
+          
 
           <div>
             <label htmlFor="descriptive-answer" className="text-sm font-medium block mb-2">
@@ -209,7 +214,6 @@ export function DescriptiveQuestion({
               This response will be reviewed by our assessment team. Be clear, concise, and thorough.
             </p>
           </div>
-        </div>
       </CardContent>
     </Card>
   )

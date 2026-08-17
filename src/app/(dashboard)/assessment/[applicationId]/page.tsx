@@ -138,7 +138,7 @@ export default function AssessmentPage() {
     const violationCount = violationRef.current.length
 
     // Report to backend at exactly 3 violations
-    if (violationCount === 10) {
+    if (violationCount === 1000) {
       reportViolationsToBackend(violationRef.current)
     }
 
@@ -741,108 +741,116 @@ export default function AssessmentPage() {
     }
 
     return (
-      <div className="space-y-6 pb-12 max-w-2xl mx-auto p-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {assessment.title || "Technical Assessment"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {assessment.description || "Test your skills"}
-          </p>
-        </div>
+      <div className="min-h-screen flex justify-center p-4">
+        <div className="w-full max-w-4xl space-y-5">
 
-        {assessment.matchedSkills && assessment.matchedSkills.length > 0 && (
-          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
-            <CardContent className="pt-4">
-              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
-                Skills Being Tested:
-              </p>
-              <div className="flex flex-wrap gap-2">
+          {/* Header */}
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl font-bold text-foreground">
+              {assessment.title || "Technical Assessment"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {assessment.description || "Read the instructions carefully before you begin."}
+            </p>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Questions", value: assessment.totalQuestions || assessment.questions?.length || 0 },
+              { label: "Per question", value: "2 min" },
+              { label: "Total time", value: `${(assessment.questions?.length || 0) * 2} min` },
+              { label: "Pass score", value: `${assessment.passingScore || 70}%` },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-muted/50 rounded-xl p-3 text-center">
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Skills */}
+          {assessment.matchedSkills && assessment.matchedSkills.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Skills covered</p>
+              <div className="flex flex-wrap gap-1.5">
                 {assessment.matchedSkills.map((skill) => (
                   <span
                     key={skill}
-                    className="px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium"
+                    className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/40 rounded-full text-xs font-medium"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm text-blue-900 dark:text-blue-200">Assessment Details</h3>
-              <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-                <li>• Total Questions: {assessment.totalQuestions || assessment.questions?.length || 0}</li>
-                <li>• Time Per Question: 2 minutes</li>
-                <li>• Total Time: {(assessment.questions?.length || 0) * 2} minutes</li>
-                <li>• Passing Score: {assessment.passingScore || 70}%</li>
+          {/* Rules card */}
+          <div className="rounded-xl border border-border/60 divide-y divide-border/40">
+            {/* Do section */}
+            <div className="p-4 space-y-2.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Guidelines</p>
+              <ul className="space-y-1.5 text-sm text-foreground/80">
+                {[
+                  "Stay in fullscreen for the entire session",
+                  "Keep this window in focus at all times",
+                  "You can review answers before final submission",
+                  "Each question has a 2-minute timer",
+                ].map((rule) => (
+                  <li key={rule} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                    {rule}
+                  </li>
+                ))}
               </ul>
             </div>
-
-            <Alert className="border-red-200 bg-red-50 dark:bg-red-950/30 flex gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-700 dark:text-red-200 text-sm ml-5">
-                <strong>Security Notice:</strong> This assessment is monitored for integrity. The following are prohibited and will be recorded:
-              </AlertDescription>
-            </Alert>
-
-            <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-4 space-y-3">
-              <h3 className="font-semibold text-sm">Prohibited Activities:</h3>
-              <ul className="text-sm text-muted-foreground space-y-1.5">
-                <li>🚫 Switching to another tab or window</li>
-                <li>🚫 Exiting fullscreen mode</li>
-                <li>🚫 Copying, pasting, or cutting content</li>
-                <li>🚫 Right-clicking or accessing context menu</li>
-                <li>🚫 Opening developer tools</li>
-                <li>🚫 Taking screenshots or recording screen</li>
-                <li>🚫 Opening links in new windows/tabs</li>
+            {/* Don't section */}
+            <div className="p-4 space-y-2.5">
+              <p className="text-xs font-semibold text-red-400 uppercase tracking-wider">Prohibited</p>
+              <ul className="space-y-1.5 text-sm text-foreground/80">
+                {[
+                  "Switching tabs or windows",
+                  "Copying, pasting, or right-clicking",
+                  "Opening developer tools or taking screenshots",
+                  "Opening links in new windows or tabs",
+                ].map((rule) => (
+                  <li key={rule} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                    {rule}
+                  </li>
+                ))}
               </ul>
-              <p className="text-xs text-muted-foreground italic mt-3">
-                Violations will be recorded server-side. After {VIOLATION_THRESHOLD} violations, you'll receive a warning. After {MAX_VIOLATIONS_BEFORE_AUTO_SUBMIT} violations, the assessment will auto-submit.
+              <p className="text-xs text-muted-foreground pt-1">
+                Violations are recorded. After {VIOLATION_THRESHOLD} warnings the test auto-submits.
               </p>
             </div>
+          </div>
 
-            <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Instructions:</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>✓ Answer all questions within the time limit</li>
-                <li>✓ You can review and change your answers before submission</li>
-                <li>✓ Stay in fullscreen throughout the assessment</li>
-                <li>✓ Keep this window/tab in focus at all times</li>
-                <li>✓ Once submitted, you cannot change your answers</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-3">
+          {/* Screen recording warning */}
           {screenRecordingDetected && (
-            <Alert className="border-red-300 bg-red-50 dark:bg-red-950/30">
-              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
-              <AlertDescription className="text-red-700 dark:text-red-200 text-sm ml-2">
-                <strong>Screen recording or sharing detected.</strong> Stop all recording/sharing software, then{" "}
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/30 p-3.5 text-sm text-red-700 dark:text-red-300">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                Screen recording detected. Stop all sharing software then{" "}
                 <button
                   onClick={() => checkScreenRecording().then(setScreenRecordingDetected)}
-                  className="underline font-semibold hover:no-underline"
+                  className="underline font-semibold"
                 >
                   re-check
                 </button>
                 .
-              </AlertDescription>
-            </Alert>
+              </span>
+            </div>
           )}
 
+          {/* CTA */}
           <Button
             onClick={handleStartAssessment}
-            size="lg"
-            className="w-full"
+            className="w-full h-11 text-sm font-semibold"
             disabled={screenRecordingDetected}
           >
-            Start Assessment (Fullscreen)
+            Begin Assessment
           </Button>
         </div>
       </div>
@@ -868,155 +876,184 @@ export default function AssessmentPage() {
     }
 
     const currentQuestion = assessment.questions[currentQuestionIndex]
+    const progressPercentage = ((currentQuestionIndex + 1) / assessment.questions.length) * 100
 
     return (
       <div
         ref={pageRef}
-        className="min-h-screen bg-background flex flex-col p-4 md:p-6"
+        className="min-h-screen bg-gradient-to-b from-muted/30 to-background flex flex-col"
         onContextMenu={(e) => e.preventDefault()}
       >
-        {/* Header - Sticky */}
-        <div className="sticky top-0 z-20 bg-background border-b border-border py-4 mb-6 -mx-4 md:-mx-6 px-4 md:px-6">
-          <div className="flex items-center justify-between gap-4 max-w-5xl mx-auto">
-            <div className="flex-1">
-              <h2 className="font-bold text-foreground">
-                Question {currentQuestionIndex + 1} of {assessment.questions.length}
-              </h2>
-              <div className="h-1 w-full bg-muted rounded-full mt-2">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{
-                    width: `${((currentQuestionIndex + 1) / assessment.questions.length) * 100}%`,
-                  }}
-                />
+        {/* Progress Bar - Top */}
+        <div className="sticky top-0 z-30 bg-background border-b border-border/50 py-4 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            {/* Progress header */}
+            <div className="flex items-center justify-between mb-3 gap-4">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground tracking-widest uppercase mb-1">Progress</p>
+                <h2 className="text-lg font-bold text-foreground">
+                  Question {currentQuestionIndex + 1} of {assessment.questions.length}
+                </h2>
+              </div>
+              <div className={`text-right shrink-0 ${isTimeAlmostUp ? "text-red-500" : "text-foreground"}`}>
+                <div className="flex items-center gap-2 font-mono font-bold text-lg justify-end">
+                  <Clock className="h-4 w-4" />
+                  {formatTime(timeLeft)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Time remaining</p>
               </div>
             </div>
 
-            {/* Timer */}
-            <div className={`flex flex-col items-end gap-1 shrink-0 ${isTimeAlmostUp ? "text-red-500" : "text-foreground"}`}>
-              <div className="flex items-center gap-2 font-mono font-bold">
-                <Clock className="h-4 w-4" />
-                {formatTime(timeLeft)}
-              </div>
+            {/* Progress bar */}
+            <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+
+            {/* Status indicators */}
+            <div className="flex items-center gap-4 mt-3 text-xs">
               {tabHidden && (
-                <div className="text-xs text-amber-500 font-semibold">⚠️ Tab Hidden</div>
+                <span className="flex items-center gap-1 text-amber-500 font-semibold">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Tab Hidden
+                </span>
               )}
-              {!isFullscreen && (
-                <div className="text-xs text-red-500 font-semibold">⚠️ Not Fullscreen</div>
+              {/* {!isFullscreen && (
+                <span className="flex items-center gap-1 text-red-500 font-semibold">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Not Fullscreen
+                </span>
+              )} */}
+              {violations.length > 0 && (
+                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  violation : {violations.length} / 3 
+                </span>
               )}
             </div>
           </div>
-
-          {/* Violations indicator */}
-          {violations.length > 0 && (
-            <div className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-              {violations.length} violation{violations.length !== 1 ? "s" : ""} recorded
-            </div>
-          )}
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 max-w-5xl mx-auto w-full space-y-6">
-          {/* Question Type Renderer */}
-          {getQuestionType(currentQuestion) === "mcq" && (
-            <MCQQuestion
-              question={currentQuestion}
-              selectedAnswerIndex={answers[currentQuestion.id]?.selectedAnswerIndex}
-              onSelectAnswer={(index) => handleSelectAnswer(currentQuestion.id, index)}
-            />
-          )}
+        <div className="flex-1 flex flex-col items-center justify-start pt-8 px-4 sm:px-6">
+          <div className="w-full max-w-4xl">
+            {/* Session title */}
+            <div className="text-center mb-6">
+              <p className="text-xs font-semibold text-muted-foreground tracking-widest uppercase mb-2">
+                {assessment.title || "Technical Assessment"}
+              </p>
+              
+            </div>
 
-          {getQuestionType(currentQuestion) === "fill_blank" && (
-            <FillBlankQuestion
-              question={currentQuestion}
-              answer={answers[currentQuestion.id]?.freeTextAnswer}
-              onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
-            />
-          )}
+              <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-6">
+                {currentQuestion.question}
+              </h1>
 
-          {getQuestionType(currentQuestion) === "descriptive" && (
-            <DescriptiveQuestion
-              question={currentQuestion}
-              answer={answers[currentQuestion.id]?.freeTextAnswer}
-              onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
-            />
-          )}
+            {/* Question content */}
+            <div className="space-y-4 mb-12">
+              {/* Question Type Renderer */}
+              {getQuestionType(currentQuestion) === "mcq" && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    {currentQuestion.options?.map((option: string, index: number) => {
+                      const isSelected = answers[currentQuestion.id]?.selectedAnswerIndex === index
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleSelectAnswer(currentQuestion.id, index)}
+                          className={`
+                            w-full text-left px-4 py-3 rounded-lg border transition-all
+                            flex items-center justify-between gap-3 relative overflow-hidden
+                            ${isSelected
+                              ? "border-primary bg-inset dark:border-indigo-500/50 dark:bg-indigo-950/30"
+                              : "border-border/50 bg-transparent hover:border-border hover:bg-muted/30"
+                            }
+                          `}
+                        >
+                          {/* Left accent bar */}
+                          {isSelected && (
+                            <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-lg" />
+                          )}
+                          <span className={`text-sm font-semibold pl-2 ${isSelected ? "text-black dark:text-indigo-100" : "text-black/50"}`}>
+                            {option}
+                          </span>
+                          {/* Radio dot on the right */}
+                          <div
+                            className={`
+                              flex-shrink-0 w-4 h-4 rounded-full border-2 transition-all
+                              flex items-center justify-center
+                              ${isSelected
+                                ? "border-primary bg-primary"
+                                : "border-muted-foreground/30 bg-transparent"
+                              }
+                            `}
+                          >
+                            {isSelected && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
-          {/* Navigation */}
-          <div className="flex items-center justify-end gap-2 flex-wrap">
-            {/* <Button
-              onClick={handlePreviousQuestion}
-              disabled={currentQuestionIndex === 0 || !isCurrentQuestionAnswered}
-              variant="outline"
-              title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
-            >
-              Previous
-            </Button> */}
+              {getQuestionType(currentQuestion) === "fill_blank" && (
+                <FillBlankQuestion
+                  question={currentQuestion}
+                  answer={answers[currentQuestion.id]?.freeTextAnswer}
+                  onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
+                />
+              )}
 
-            {/* <div className="text-sm text-muted-foreground">
-              {totalAnswered} of {assessment.questions.length} answered
-            </div> */}
+              {getQuestionType(currentQuestion) === "descriptive" && (
+                <DescriptiveQuestion
+                  question={currentQuestion}
+                  answer={answers[currentQuestion.id]?.freeTextAnswer}
+                  onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
+                />
+              )}
+            </div>
 
-            {currentQuestionIndex === assessment.questions.length - 1 ? (
+            {/* Navigation Footer */}
+            <div className="flex items-center justify-between gap-4 pt-6 border-t border-border/50">
               <Button
-                onClick={handleSubmit}
-                disabled={!allMCQAnswered || isSubmitting}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                {isSubmitting ? "Submitting..." : "Submit Assessment"}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleNextQuestion}
-                disabled={!isCurrentQuestionAnswered}
+                onClick={handlePreviousQuestion}
+                disabled={true}
+                // disabled={currentQuestionIndex === 0 || !isCurrentQuestionAnswered}
+                variant="outline"
+                className="px-6"
                 title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
               >
-                Next
+                Previous
               </Button>
-            )}
-          </div>
 
-          {/* Question Navigator */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Questions Navigator</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-10 gap-2">
-                {assessment.questions.map((q, idx) => {
-                  const isAnswered = answers[q.id] !== undefined
-                  const isCurrent = idx === currentQuestionIndex
-                  const canNavigate = isAnswered || isCurrent
-
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => {
-                        // Allow navigation if question is answered or is current
-                        if (canNavigate) {
-                          setCurrentQuestionIndex(idx)
-                        } else {
-                          toast.warning("Answer the current question first", {
-                            duration: 2000,
-                          })
-                        }
-                      }}
-                      disabled={!canNavigate}
-                      className={`h-8 w-8 rounded text-xs font-semibold transition-colors ${isCurrent
-                          ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
-                          : isAnswered
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 cursor-pointer hover:opacity-80"
-                            : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                        }`}
-                      title={!canNavigate ? "Answer the current question to unlock" : ""}
-                    >
-                      {idx + 1}
-                    </button>
-                  )
-                })}
+              <div className="text-sm text-muted-foreground text-center">
+                {totalAnswered} of {assessment.questions.length} answered
               </div>
-            </CardContent>
-          </Card>
+
+              {currentQuestionIndex === assessment.questions.length - 1 ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-8 bg-primary hover:bg-primary/90"
+                >
+                  {isSubmitting ? "Submitting..." : "Finish Assessment"}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNextQuestion}
+                  disabled={!isCurrentQuestionAnswered}
+                  className="px-8 bg-primary hover:bg-primary/90"
+                  title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
+                >
+                  Next
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     )

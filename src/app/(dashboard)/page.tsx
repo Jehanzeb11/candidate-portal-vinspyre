@@ -8,252 +8,269 @@ import {
   FileUp,
   ChevronDown,
   ChevronUp,
+  CheckCheck,
 } from "lucide-react"
 import { useAuthStore } from "@/features/auth/store"
 import { useCandidateProfile } from "@/features/auth/hooks/use-candidate-profile"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CandidateDocumentUpload } from "@/components/documents/CandidateDocumentUpload"
 import { OfferAcceptanceModal } from "@/components/offer/OfferAcceptanceModal"
 import { useOfferToken } from "@/hooks/useOfferToken"
 import { OnboardingSection } from "@/features/onboarding/components/OnboardingSection"
+import { cn } from "@/utils/cn"
 
-// ─── Stage icon mapping ─────────────────────────────────────────────────────
+// ─── Stage config ────────────────────────────────────────────────────────────
 
-const stageIcons: Record<string, React.ReactNode> = {
-  applied: "📝",
-  approval: "✅",
-  assessment: "📚",
-  interview: "👤",
-  offer: "🎁",
-  documents: "📄",
-  onboarding: "🎉",
-}
+const STAGES = [
+  { key: "applied",    label: "Applied",    icon: "✦" },
+  { key: "approval",   label: "Approval",   icon: "✦" },
+  { key: "assessment", label: "Assessment", icon: "✦" },
+  { key: "interview",  label: "Interview",  icon: "✦" },
+  { key: "offer",      label: "Offer",      icon: "✦" },
+  { key: "documents",  label: "Documents",  icon: "✦" },
+  { key: "onboarding", label: "Onboarding", icon: "✦" },
+] as const
 
 const stageDescriptions: Record<string, string> = {
-  applied: "Application submitted and under review",
-  approval: "HR is reviewing your application",
-  assessment: "Skills and technical evaluation",
-  interview: "One or more interview rounds",
-  offer: "Offer letter extended to you",
-  documents: "Submit required onboarding documents",
-  onboarding: "Welcome aboard! Joining formalities",
+  applied:    "Your application has been submitted and is under review.",
+  approval:   "HR is reviewing your application details.",
+  assessment: "Complete your skills and technical evaluation.",
+  interview:  "One or more interview rounds to be scheduled.",
+  offer:      "An offer letter has been extended to you.",
+  documents:  "Submit required documents to proceed.",
+  onboarding: "Welcome aboard — complete your onboarding formalities.",
 }
 
-// ─── Recruitment Tracker Card ──────────────────────────────────────────────
+// ─── Recruitment Tracker ─────────────────────────────────────────────────────
 
 function RecruitmentTracker() {
   const router = useRouter()
-  const { isLoading, refetch } = useCandidateProfile()
+  const { refetch } = useCandidateProfile()
   const profile = useAuthStore((s) => s.profile)
   const [docsOpen, setDocsOpen] = useState(false)
-
-  if (isLoading) {
-    return <DashboardSkeleton />
-  }
 
   const recruitment = profile?.recruitmentProgress
   const applications = profile?.jobApplications ?? []
 
   if (!recruitment) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <AlertCircle className="h-10 w-10 text-amber-500" />
-          <p className="text-sm font-medium text-muted-foreground">
-            No active applications found. Apply for a position to start your recruitment journey.
+      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card p-12 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
+          <AlertCircle className="h-5 w-5 text-amber-500" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">No active application</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Apply for a position to start your recruitment journey.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
   }
 
   const progressPercent = recruitment.progressPercent ?? 0
   const stages = recruitment.stages ?? []
 
+  const currentStageIndex = stages.findIndex((s) => s.status === "active")
+
   return (
-    <Card className="overflow-visible">
-      <CardHeader className="pb-4 border-b border-border/60">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1">
-            <CardTitle className="text-base font-bold">
+    <div className="space-y-4">
+      {/* ── Header card ── */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-semibold text-foreground">
               {applications[0]?.positionAppliedFor ?? "Your Application"}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {applications[0]?.createdAt
                 ? `Applied ${new Date(applications[0].createdAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
                   })}`
-                : "Application status"}
+                : "Recruitment in progress"}
             </p>
           </div>
 
-          {/* Status badge */}
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold capitalize shrink-0 ${
-              recruitment.currentStatus === "active"
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400"
-                : recruitment.currentStatus === "completed"
-                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
-            }`}
-          >
-            {recruitment.currentStatus === "active" && "🔄 In Progress"}
-            {recruitment.currentStatus === "completed" && "🎉 Completed"}
-            {recruitment.currentStatus === "pending" && "⏳ Pending"}
-          </span>
+          <StatusPill status={recruitment.currentStatus} />
         </div>
 
         {/* Progress bar */}
-        <div>
-          <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-            <span>Progress</span>
-            <span>{progressPercent}%</span>
+        <div className="mt-5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-[11px] font-medium text-muted-foreground">Overall progress</span>
+            <span className="text-[11px] font-semibold text-primary">{progressPercent}%</span>
           </div>
-          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-700"
+              className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="pt-8 pb-6">
-        {/* Stage tracker */}
-        <div className="flex items-start min-w-full overflow-x-auto pb-4">
+      {/* ── Stage stepper ── */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 overflow-x-auto">
+        <div className="flex min-w-max items-start">
           {stages.map((stage, idx) => {
-            const icon = stageIcons[stage.key] || "◯"
-            const isCurrent = stage.status === "active"
             const isCompleted = stage.status === "done" || stage.status === "submitted"
+            const isCurrent = stage.status === "active"
+            const isPending = stage.status === "pending"
 
             return (
-              <div key={stage.key} className="flex flex-col items-center flex-1 relative shrink-0 min-w-max">
-                {/* Connector line */}
+              <div key={stage.key} className="flex items-start flex-1 relative">
+                {/* Connector */}
                 {idx > 0 && (
                   <div
-                    className={`absolute top-5 right-1/2 w-full h-0.5 -translate-y-1/2 transition-colors ${
-                      isCompleted || isCurrent ? "bg-primary" : "bg-border"
-                    }`}
+                    className={cn(
+                      "absolute top-4 right-1/2 h-px w-full -translate-y-px",
+                      isCompleted ? "bg-primary" : "bg-border"
+                    )}
                   />
                 )}
 
-                {/* Circle */}
-                <div
-                  className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold transition-all ${
-                    isCompleted
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : isCurrent
-                      ? "bg-primary/10 text-primary shadow-lg ring-4 ring-primary/10"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {icon}
-                  {isCurrent && (
-                    <span className="absolute inset-0 rounded-full animate-ping bg-primary/20" />
-                  )}
-                </div>
+                <div className="flex flex-col items-center w-full gap-2">
+                  {/* Node */}
+                  <div
+                    className={cn(
+                      "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all duration-300",
+                      isCompleted
+                        ? "bg-primary text-primary-foreground"
+                        : isCurrent
+                        ? "bg-muted text-primary ring-2 ring-primary/30"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {isCompleted ? (
+                      <CheckCheck className="h-3.5 w-3.5" />
+                    ) : (
+                      <span>{idx + 1}</span>
+                    )}
+                    {isCurrent && (
+                      <span className="absolute inset-0 rounded-full animate-ping bg-primary/20" />
+                    )}
+                  </div>
 
-                {/* Label */}
-                <p
-                  className={`mt-2.5 text-xs font-semibold text-center whitespace-nowrap transition-colors ${
-                    isCompleted
-                      ? "text-primary"
-                      : isCurrent
-                      ? "text-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {stage.label}
-                </p>
+                  {/* Label */}
+                  <span
+                    className={cn(
+                      "whitespace-nowrap text-[10px] font-medium",
+                      isCompleted
+                        ? "text-primary"
+                        : isCurrent
+                        ? "text-foreground"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {stage.label}
+                  </span>
 
-                {/* Status */}
-                <div className="mt-1 h-4">
-                  {isCompleted && <span className="text-[10px] text-primary font-medium">Done</span>}
-                  {isCurrent && <span className="text-[10px] text-amber-500 font-semibold">Active</span>}
+                  {/* Micro status */}
+                  <span className={cn(
+                    "text-[9px] font-semibold uppercase tracking-wide",
+                    isCompleted ? "text-primary/70" :
+                    isCurrent ? "text-amber-500" :
+                    "text-transparent"
+                  )}>
+                    {isCompleted ? "Done" : isCurrent ? "Active" : "—"}
+                  </span>
                 </div>
               </div>
             )
           })}
         </div>
+      </div>
 
-        {/* Assessment button - show if in assessment stage and not completed/submitted */}
-        {recruitment.currentStage === "assessment" && applications[0] && (() => {
-          const assessmentStage = stages.find((s) => s.key === "assessment")
-          const isAssessmentDone = assessmentStage?.status === "done" || assessmentStage?.status === "submitted"
-          return !isAssessmentDone ? (
-            <div className="mt-6 flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => router.push(`/assessment/${applications[0].id}`)}
-                className="gap-1.5"
-              >
-                <Play className="h-3.5 w-3.5" />
-                Start Assessment
-              </Button>
-            </div>
-          ) : null
-        })()}
+      {/* ── Current stage info ── */}
+      {recruitment.currentStage && (
+        <div className="rounded-2xl border border-primary/15 bg-primary/5 px-5 py-4">
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1">
+            Current Stage · {recruitment.currentStageLabel}
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {stageDescriptions[recruitment.currentStage] || recruitment.message}
+          </p>
+        </div>
+      )}
 
-        {/* Documents upload — show if in documents stage, offer active, no prior submission */}
-        {recruitment.currentStage === "documents" && (() => {
-          const documentsStage = stages.find((s) => s.key === "documents")
-          const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
-          const canUpload = profile?.offerAccess?.canUploadDocuments ?? true
-          return !isDocsDone && canUpload ? (
-            <div className="mt-6 space-y-3">
-              <Button
-                size="sm"
-                variant={docsOpen ? "secondary" : "default"}
-                className="gap-1.5"
-                onClick={() => setDocsOpen((prev) => !prev)}
-              >
-                <FileUp className="h-3.5 w-3.5" />
-                Upload Documents
-                {docsOpen ? (
-                  <ChevronUp className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                )}
-              </Button>
+      {/* ── Assessment CTA ── */}
+      {recruitment.currentStage === "assessment" && applications[0] && (() => {
+        const assessmentStage = stages.find((s) => s.key === "assessment")
+        const isAssessmentDone = assessmentStage?.status === "done" || assessmentStage?.status === "submitted"
+        return !isAssessmentDone ? (
+          <Button
+            onClick={() => router.push(`/assessment/${applications[0].id}`)}
+            className="w-full sm:w-auto gap-2"
+          >
+            <Play className="h-4 w-4" />
+            Start Assessment
+          </Button>
+        ) : null
+      })()}
 
-              {docsOpen && (
-                <div className="rounded-xl border border-border bg-muted/20 p-4">
-                  <CandidateDocumentUpload onSuccess={() => { setDocsOpen(false); void refetch() }} />
-                </div>
-              )}
-            </div>
-          ) : null
-        })()}
+      {/* ── Documents upload ── */}
+      {recruitment.currentStage === "documents" && (() => {
+        const documentsStage = stages.find((s) => s.key === "documents")
+        const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
+        const canUpload = profile?.offerAccess?.canUploadDocuments ?? true
+        return !isDocsDone && canUpload ? (
+          <div className="space-y-3">
+            <Button
+              variant={docsOpen ? "secondary" : "default"}
+              className="w-full sm:w-auto gap-2"
+              onClick={() => setDocsOpen((prev) => !prev)}
+            >
+              <FileUp className="h-4 w-4" />
+              Upload Documents
+              {docsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
 
-        {/* Onboarding content — show if in onboarding stage */}
-        {recruitment.currentStage === "onboarding" && (
-          <div className="mt-6">
-            <OnboardingSection />
+            {docsOpen && (
+              <div className="rounded-2xl border border-border overflow-hidden">
+                <CandidateDocumentUpload
+                  onSuccess={() => { setDocsOpen(false); void refetch() }}
+                />
+              </div>
+            )}
           </div>
-        )}
+        ) : null
+      })()}
 
-        {/* Current stage description */}
-        {recruitment.currentStage && (
-          <div className="mt-6 rounded-xl bg-primary/5 border border-primary/10 px-4 py-3 flex items-start gap-3">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg">
-              {stageIcons[recruitment.currentStage]}
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground">
-                Current Stage: {recruitment.currentStageLabel}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {stageDescriptions[recruitment.currentStage] || recruitment.message}
-              </p>
-            </div>
-          </div>
+      {/* ── Onboarding ── */}
+      {recruitment.currentStage === "onboarding" && (
+        <OnboardingSection />
+      )}
+    </div>
+  )
+}
+
+// ─── Status pill ─────────────────────────────────────────────────────────────
+
+function StatusPill({ status }: { status: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold",
+        status === "active"
+          ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+          : status === "completed"
+          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+          : "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-500"
+      )}
+    >
+      <span
+        className={cn(
+          "h-1.5 w-1.5 rounded-full",
+          status === "active" ? "bg-blue-500 animate-pulse" :
+          status === "completed" ? "bg-emerald-500" :
+          "bg-amber-500"
         )}
-      </CardContent>
-    </Card>
+      />
+      {status === "active" ? "In Progress" : status === "completed" ? "Completed" : "Pending"}
+    </span>
   )
 }
 
@@ -261,46 +278,45 @@ function RecruitmentTracker() {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6 pb-12 max-w-5xl mx-auto">
-      {/* Welcome skeleton */}
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-56" />
-        <Skeleton className="h-4 w-40" />
+    <div className="space-y-4 pb-12 max-w-3xl mx-auto">
+      <div className="space-y-1.5">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-36" />
       </div>
 
-      {/* Card skeleton */}
-      <Card>
-        <CardHeader className="pb-4 border-b border-border/60">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-3 w-28" />
+      {/* Header card */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-52" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+          <Skeleton className="h-6 w-24 rounded-full" />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-8" />
+          </div>
+          <Skeleton className="h-1.5 w-full rounded-full" />
+        </div>
+      </div>
+
+      {/* Stepper card */}
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex items-start gap-0">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="flex flex-1 flex-col items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-2.5 w-12" />
+              <Skeleton className="h-2 w-8" />
             </div>
-            <Skeleton className="h-6 w-24 rounded-full" />
-          </div>
-          <div className="mt-4 space-y-1.5">
-            <div className="flex justify-between">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-3 w-8" />
-            </div>
-            <Skeleton className="h-2 w-full rounded-full" />
-          </div>
-        </CardHeader>
-        <CardContent className="pt-8 pb-6">
-          {/* Stage nodes */}
-          <div className="flex items-start gap-0 min-w-150">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center flex-1">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <Skeleton className="h-3 w-14 mt-2.5" />
-                <Skeleton className="h-2.5 w-8 mt-1" />
-              </div>
-            ))}
-          </div>
-          {/* Current stage panel */}
-          <Skeleton className="h-16 w-full rounded-xl mt-6" />
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Stage info */}
+      <Skeleton className="h-16 w-full rounded-2xl" />
     </div>
   )
 }
@@ -312,19 +328,17 @@ export default function HomePage() {
   const profile = useAuthStore((s) => s.profile)
   const { showOfferModal, offerToken, closeOfferModal, handleOfferAcceptSuccess } = useOfferToken()
 
-  console.log('Dashboard - showOfferModal:', showOfferModal, 'offerToken:', offerToken)
-
   if (isLoading) return <DashboardSkeleton />
 
   return (
-    <div className="space-y-6 pb-12 max-w-5xl mx-auto">
+    <div className="space-y-6 pb-12 max-w-8xl mx-auto">
       {/* Welcome */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">
+        <h1 className="text-xl font-bold text-foreground tracking-tight">
           Welcome back{profile?.fullName ? `, ${profile.fullName.split(" ")[0]}` : ""} 👋
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Track your recruitment journey below.
+        <p className="mt-1 text-sm text-muted-foreground">
+          Here's where you are in your recruitment journey.
         </p>
       </div>
 

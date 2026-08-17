@@ -3,104 +3,145 @@
 import {
   Mail,
   Phone,
+  MapPin,
   Link2,
   ExternalLink,
-  Users,
   Briefcase,
   GraduationCap,
-  Clock,
   FileText,
   CalendarDays,
-  BadgeCheck,
-  Banknote,
-  Moon,
-  UserCheck,
+  Clock,
+  Edit3,
+  MapPinIcon,
+  Globe,
 } from "lucide-react"
 
 import { useAuthStore } from "@/features/auth/store"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/utils/cn"
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
+function getInitials(name: string) {
+  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()
 }
 
 function formatDate(iso?: string | null) {
   if (!iso) return "—"
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
+  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
 }
 
-function formatCurrency(amount?: number) {
-  if (amount === undefined || amount === null) return "—"
-  return new Intl.NumberFormat("en-PK", {
-    style: "currency",
-    currency: "PKR",
-    maximumFractionDigits: 0,
-  }).format(amount)
+function formatCurrency(amount?: number | null) {
+  if (amount == null) return "—"
+  return new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(amount)
 }
 
-// ─── small display primitives ─────────────────────────────────────────────────
+function humanize(str?: string | null) {
+  if (!str) return "—"
+  return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
-function Field({ label, value }: { label: string; value?: string | null }) {
+// ─── Field component ──────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  value,
+  className,
+}: {
+  label: string
+  value?: string | null
+  className?: string
+}) {
   return (
-    <div className="space-y-0.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className={cn("flex-1", className)}>
+      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
         {label}
       </p>
-      <p className="text-sm font-medium text-foreground wrap-break-word">
-        {value || "—"}
+      <p className="text-[14px] font-medium text-foreground wrap-break-word">
+        {value ?? "—"}
       </p>
     </div>
   )
 }
 
-function Section({
-  icon: Icon,
+// ─── Section header ───────────────────────────────────────────────────────────
+
+function SectionHeader({
   title,
-  children,
+  onEdit,
 }: {
-  icon: React.ElementType
   title: string
-  children: React.ReactNode
+  onEdit?: () => void
 }) {
   return (
-    <Card>
-      <CardHeader className="border-b border-border/60 pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <Icon className="h-4 w-4 text-primary" />
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-4">{children}</CardContent>
-    </Card>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-[16px] font-bold text-foreground">{title}</h2>
+      {onEdit && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onEdit}
+          className="gap-1.5 text-orange-500 border-orange-200 hover:bg-orange-50 dark:border-orange-900/40 dark:hover:bg-orange-950/20"
+        >
+          <Edit3 className="h-3.5 w-3.5" />
+          Edit
+        </Button>
+      )}
+    </div>
   )
 }
 
-function ApplicationStatusBadge({ status }: { status?: string }) {
-  const map: Record<string, string> = {
-    accepted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
-    rejected: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400",
-    pending:  "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
-    reviewed: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400",
-  }
-  const key = (status ?? "pending").toLowerCase()
+// ─── Section card ─────────────────────────────────────────────────────────────
+
+function Section({
+  title,
+  onEdit,
+  children,
+}: {
+  title: string
+  onEdit?: () => void
+  children: React.ReactNode
+}) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${map[key] ?? map.pending}`}>
-      {status ?? "Pending"}
-    </span>
+    <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+      <SectionHeader title={title} onEdit={onEdit} />
+      {children}
+    </div>
+  )
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function ProfileSkeleton() {
+  return (
+    <div className="space-y-4 pb-12 max-w-6xl mx-auto">
+      {/* Hero skeleton */}
+      <div className="rounded-2xl border border-border bg-card p-6 flex items-center gap-4">
+        <Skeleton className="h-20 w-20 rounded-full shrink-0" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-3.5 w-32" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+
+      {/* Sections skeleton */}
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-border bg-card p-8 space-y-4">
+          <Skeleton className="h-6 w-40" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, j) => (
+              <div key={j} className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -110,109 +151,93 @@ export default function ProfilePage() {
   const profile = useAuthStore((s) => s.profile)
 
   if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <p className="text-muted-foreground text-sm">No profile data available.</p>
-      </div>
-    )
+    return <ProfileSkeleton />
   }
 
   const application = profile.jobApplications?.[0]
 
   return (
-    <div className="space-y-6 pb-12 max-w-8xl mx-auto">
+    <div className="space-y-4 pb-12 max-w-8xl mx-auto">
 
-      {/* ── Hero card ─────────────────────────────── */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <Avatar className="h-20 w-20 ring-4 ring-primary/20 shrink-0">
-              <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-white text-2xl font-bold">
-                {getInitials(profile.fullName)}
-              </AvatarFallback>
-            </Avatar>
+      {/* ── Hero card ──────────────────────────────── */}
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+        <div className="flex items-start gap-5">
+          <Avatar className="h-20 w-20 ring-4 ring-primary/15 shrink-0">
+            <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-white text-2xl font-bold">
+              {getInitials(profile.fullName)}
+            </AvatarFallback>
+          </Avatar>
 
-            <div className="flex-1 min-w-0 space-y-1">
-              <h1 className="text-xl font-bold text-foreground truncate">
-                {profile.fullName}
-              </h1>
-              {application?.positionAppliedFor && (
-                <p className="text-sm text-muted-foreground font-medium">
-                  {application.positionAppliedFor}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-2 pt-1">
-                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5" /> {profile.email}
-                </span>
-                {profile.phone && (
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Phone className="h-3.5 w-3.5" /> {profile.phone}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 shrink-0">
-              {profile.portfolioLink && (
-                <a
-                  href={profile.portfolioLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
-                >
-                  <Link2 className="h-3.5 w-3.5" /> Portfolio
-                </a>
-              )}
-              {profile.linkedInProfile && (
-                <a
-                  href={profile.linkedInProfile}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" /> LinkedIn
-                </a>
-              )}
-            </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[20px] font-bold text-foreground truncate">
+              {profile.fullName}
+            </h1>
+            {application?.positionAppliedFor && (
+              <p className="text-sm text-muted-foreground font-medium mt-0.5">
+                {application.positionAppliedFor}
+              </p>
+            )}
+            {application?.address && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                <MapPin className="h-3 w-3" />
+                {application.address}
+              </p>
+            )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Two-column grid ───────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {/* Personal info */}
-        <Section icon={UserCheck} title="Personal Information">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Full Name"           value={profile.fullName} />
-            <Field label="Email"               value={profile.email} />
-            <Field label="Phone"               value={profile.phone} />
-            <Field label="Years of Experience" value={profile.yearsOfExperience} />
-            <Field
-              label="Worked With Us Before"
-              value={profile.workedWithUsBefore ? "Yes" : "No"}
-            />
-          </div>
-        </Section>
-
-        {/* Reference */}
-        <Section icon={Users} title="Reference">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Reference Name"         value={profile.referenceName} />
-            <Field label="Reference Relationship" value={profile.referenceRelationship} />
-          </div>
-        </Section>
-
+        </div>
       </div>
 
-      {/* ── Education ─────────────────────────────── */}
+      {/* ── Personal Information ───────────────────── */}
+      <Section title="Personal Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Field label="First Name" value={profile.fullName?.split(" ")[0]} />
+          <Field label="Last Name" value={profile.fullName?.split(" ").slice(1).join(" ")} />
+          <Field label="Date of Birth" value={profile.age ? `Age ${profile.age}` : "—"} />
+          <Field label="Email Address" value={profile.email} />
+          <Field label="Phone Number" value={profile.phone} />
+          <Field label="Gender" value={humanize(profile.gender)} />
+        </div>
+      </Section>
+
+      {/* ── Address ────────────────────────────────── */}
+      {application?.address && (
+        <Section title="Address">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Field label="Address" value={application.address} className="lg:col-span-3" />
+            {application.linkedInProfile && (
+              <Field label="City / State" value={application.linkedInProfile} />
+            )}
+            {profile.age && (
+              <Field label="Postal Code" value={profile.age?.toString()} />
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/* ── Employment ────────────────────────────── */}
+      {application && (
+        <Section title="Employment">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Field label="Position Applied For" value={application.positionAppliedFor} />
+            <Field label="Current Employment Status" value={humanize(application.currentEmploymentStatus)} />
+            <Field label="Years of Experience" value={humanize(profile.yearsOfExperience)} />
+            <Field label="Current Salary (PKR)" value={formatCurrency(application.currentSalaryPkr)} />
+            <Field label="Expected Salary (PKR)" value={formatCurrency(application.expectedMonthlySalaryPkr)} />
+            <Field label="Notice Period" value={humanize(application.noticePeriod)} />
+            <Field label="Earliest Join Date" value={formatDate(application.earliestAvailableJoiningDate)} />
+            <Field label="Evening Shift" value={application.comfortableEveningShift ? "Comfortable" : "Not Comfortable"} />
+            <Field label="Worked With Us Before" value={profile.workedWithUsBefore ? "Yes" : "No"} />
+          </div>
+        </Section>
+      )}
+
+      {/* ── Education ──────────────────────────────── */}
       {profile.educationalRecords && profile.educationalRecords.length > 0 && (
-        <Section icon={GraduationCap} title="Education">
+        <Section title="Education">
           <div className="space-y-3">
             {profile.educationalRecords.map((edu, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40">
-                <GraduationCap className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-muted/30">
+                <GraduationCap className="h-4 w-4 text-primary shrink-0" />
                 <p className="text-sm font-medium">{edu.certificateOrDegree}</p>
               </div>
             ))}
@@ -220,14 +245,14 @@ export default function ProfilePage() {
         </Section>
       )}
 
-      {/* ── Employment ────────────────────────────── */}
+      {/* ── Employment History ────────────────────── */}
       {profile.employmentRecords && profile.employmentRecords.length > 0 && (
-        <Section icon={Briefcase} title="Employment History">
+        <Section title="Employment History">
           <div className="space-y-3">
             {profile.employmentRecords.map((emp, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40">
+              <div key={i} className="flex items-start gap-3 p-4 rounded-lg border border-border/40 bg-muted/30">
                 <Briefcase className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">{emp.position}</p>
                   <p className="text-xs text-muted-foreground">{emp.organizationName}</p>
                 </div>
@@ -237,94 +262,103 @@ export default function ProfilePage() {
         </Section>
       )}
 
-      {/* ── Job Application ───────────────────────── */}
+      {/* ── Job Details ────────────────────────────── */}
       {application && (
-        <Section icon={FileText} title="Job Application">
-          <div className="space-y-5">
-
-            {/* Status + position */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Position Applied For
-                </p>
-                <p className="text-sm font-semibold">{application.positionAppliedFor ?? "—"}</p>
-              </div>
-              <ApplicationStatusBadge status={application.status} />
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <Field label="Notice Period"       value={application.noticePeriod} />
-              <Field
-                label="Earliest Join Date"
-                value={formatDate(application.earliestAvailableJoiningDate)}
-              />
-              <Field
-                label="Evening Shift"
-                value={application.comfortableEveningShift ? "Comfortable" : "Not Comfortable"}
-              />
-              <Field
-                label="Current Salary"
-                value={formatCurrency(application.currentSalaryPkr)}
-              />
-              <Field
-                label="Expected Salary"
-                value={formatCurrency(application.expectedMonthlySalaryPkr)}
-              />
-              <Field
-                label="Reason for Leaving"
-                value={application.reasonForLeavingLastJob}
-              />
-            </div>
-
-            {/* Cover Letter */}
-            {application.coverLetter && (
-              <>
-                <Separator />
-                <div className="space-y-1.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Cover Letter
-                  </p>
-                  <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                    {application.coverLetter}
-                  </p>
-                </div>
-              </>
+        <Section title="Job Details">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Field label="Job Seeking Status" value={humanize(application.jobSeekingStatus)} />
+            <Field label="Heard About Opportunity" value={humanize(application.heardAboutOpportunity)} />
+            <Field label="Application Status" value={humanize(application.status)} />
+            {application.organizationName && (
+              <Field label="Current Organization" value={application.organizationName} />
             )}
-
-            {/* CV link */}
-            {application.cvUrl && (
-              <>
-                <Separator />
-                <a
-                  href={application.cvUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
-                >
-                  <FileText className="h-4 w-4 text-primary" />
-                  View CV
-                </a>
-              </>
+            {application.positionDesignation && (
+              <Field label="Current Designation" value={application.positionDesignation} />
             )}
-
+            {application.reasonForLeavingLastJob && (
+              <Field label="Reason For Leaving" value={application.reasonForLeavingLastJob} />
+            )}
           </div>
         </Section>
       )}
 
-      {/* ── Timestamps ────────────────────────────── */}
-      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground px-1">
-        <span className="flex items-center gap-1.5">
-          <CalendarDays className="h-3.5 w-3.5" />
-          Joined {formatDate(profile.createdAt)}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5" />
-          Updated {formatDate(profile.updatedAt)}
-        </span>
-      </div>
+      {/* ── Interview & Offer ──────────────────────── */}
+      {profile.candidateInterviews && profile.candidateInterviews.length > 0 && (
+        <Section title="Interview & Offer">
+          <div className="space-y-4">
+            {profile.candidateInterviews.map((interview, i) => (
+              <div key={interview.id} className="p-4 rounded-lg border border-border/40 bg-muted/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Field label="Round" value={`${humanize(interview.roundType)} — Round ${interview.roundNumber}`} />
+                  <Field label="Interview Status" value={humanize(interview.status)} />
+                  <Field label="Offer Status" value={humanize(interview.offerStatus)} />
+                  {interview.offerSentAt && (
+                    <Field label="Offer Sent Date" value={formatDate(interview.offerSentAt)} />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ── Documents ──────────────────────────────── */}
+      {profile.candidateDocumentSubmissions && profile.candidateDocumentSubmissions.length > 0 && (
+        <Section title="Submitted Documents">
+          <div className="space-y-4">
+            {profile.candidateDocumentSubmissions.map((sub) => (
+              <div key={sub.id} className="p-4 rounded-lg border border-border/40 bg-muted/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Field label="Document Status" value={humanize(sub.status)} />
+                  <Field label="Submitted At" value={formatDate(sub.submittedAt)} />
+                  {sub.reviewedAt && (
+                    <Field label="Reviewed At" value={formatDate(sub.reviewedAt)} />
+                  )}
+                  {sub.reviewNote && (
+                    <Field label="Review Note" value={sub.reviewNote} className="sm:col-span-2 lg:col-span-3" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ── CV & Cover Letter ──────────────────────– */}
+      {(application?.cvUrl || application?.coverLetter) && (
+        <Section title="Documents & Notes">
+          <div className="space-y-4">
+            {application.cvUrl && (
+              <a
+                href={application.cvUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold">Curriculum Vitae</p>
+                    <p className="text-xs text-muted-foreground">Submitted with application</p>
+                  </div>
+                </div>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </a>
+            )}
+
+            {application.coverLetter && (
+              <div className="p-4 rounded-lg border border-border bg-muted/20">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Cover Letter
+                </p>
+                <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                  {application.coverLetter}
+                </p>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
 
     </div>
   )
