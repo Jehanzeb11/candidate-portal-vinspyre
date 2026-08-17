@@ -14,7 +14,9 @@ import { useCandidateProfile } from "@/features/auth/hooks/use-candidate-profile
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DocumentsUploadSection } from "@/components/documents/DocumentsUploadSection"
+import { CandidateDocumentUpload } from "@/components/documents/CandidateDocumentUpload"
+import { OfferAcceptanceModal } from "@/components/offer/OfferAcceptanceModal"
+import { useOfferToken } from "@/hooks/useOfferToken"
 
 // ─── Stage icon mapping ─────────────────────────────────────────────────────
 
@@ -201,7 +203,7 @@ function RecruitmentTracker() {
           const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
           const hasSubmitted = (profile?.candidateDocumentSubmissions?.length ?? 0) > 0
           const canUpload = profile?.offerAccess?.canUploadDocuments ?? true
-          return !isDocsDone && !hasSubmitted && canUpload ? (
+          return !isDocsDone && canUpload ? (
             <div className="mt-6 space-y-3">
               <Button
                 size="sm"
@@ -220,7 +222,7 @@ function RecruitmentTracker() {
 
               {docsOpen && (
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
-                  <DocumentsUploadSection onSuccess={() => { setDocsOpen(false); void refetch() }} />
+                  <CandidateDocumentUpload onSuccess={() => { setDocsOpen(false); void refetch() }} />
                 </div>
               )}
             </div>
@@ -301,6 +303,9 @@ function DashboardSkeleton() {
 export default function HomePage() {
   const { isLoading } = useCandidateProfile()
   const profile = useAuthStore((s) => s.profile)
+  const { showOfferModal, offerToken, closeOfferModal, handleOfferAcceptSuccess } = useOfferToken()
+
+  console.log('Dashboard - showOfferModal:', showOfferModal, 'offerToken:', offerToken)
 
   if (isLoading) return <DashboardSkeleton />
 
@@ -318,6 +323,14 @@ export default function HomePage() {
 
       {/* Recruitment Tracker */}
       <RecruitmentTracker />
+
+      {/* Offer Acceptance Modal */}
+      <OfferAcceptanceModal
+        isOpen={showOfferModal}
+        onClose={closeOfferModal}
+        offerToken={offerToken}
+        onAcceptSuccess={handleOfferAcceptSuccess}
+      />
     </div>
   )
 }

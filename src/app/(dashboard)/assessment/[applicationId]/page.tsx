@@ -52,7 +52,7 @@ export default function AssessmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shouldAutoSubmit, setShouldAutoSubmit] = useState(false)
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false)
-const [screenRecordingDetected, setScreenRecordingDetected] = useState(false);
+  const [screenRecordingDetected, setScreenRecordingDetected] = useState(false);
   const [questionTimers, setQuestionTimers] = useState<Record<string, number>>({})
   const [justSubmitted, setJustSubmitted] = useState(false)
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null)

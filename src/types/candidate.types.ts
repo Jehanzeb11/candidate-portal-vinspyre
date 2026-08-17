@@ -59,7 +59,7 @@ export interface CandidateDocumentSubmission {
   id: string
   candidateProfileId: string
   candidateInterviewId: string
-  documents: string[]
+  documents: { cnic: string; payslip: string; bill: string } | string[] // Support both new structured format and legacy array format
   status: "submitted" | "reviewed" | "rejected"
   reviewedByUserId?: string | null
   reviewedAt?: string | null
@@ -68,6 +68,18 @@ export interface CandidateDocumentSubmission {
   submittedAt: string
   createdAt: string
   updatedAt: string
+}
+
+// Document upload types
+export interface DocumentUploadPayload {
+  cnic: File
+  payslip: File
+  bill: File
+}
+
+export interface DocumentUploadResponse {
+  message: string
+  id: string
 }
 
 // ---------------------------------------------------------------------------
@@ -127,6 +139,7 @@ export interface CandidateProfile {
   recruitmentProgress?: RecruitmentProgress
   createdAt?: string
   updatedAt?: string
+  isPasswordUpdated?: boolean
 }
 
 // ---------------------------------------------------------------------------

@@ -92,6 +92,7 @@ function PasswordField({
 
 export function ChangePasswordModal() {
   const isPasswordUpdated = useAuthStore((s) => s.isPasswordUpdated)
+  const setPasswordUpdated = useAuthStore((s) => s.setPasswordUpdated)
   const [dismissed, setDismissed] = useState(false)
   const router = useRouter()
   const {
@@ -113,10 +114,16 @@ export function ChangePasswordModal() {
         }),
       })
 
-      toast.success("Password updated. Please log in with your new password.")
-      // Clear session — user must re-authenticate with the new password
-      // useAuthStore.getState().clearUser()
-      // window.location.href = "/login"
+      toast.success("Password updated successfully!")
+      
+      // Update the password status in the store
+      setPasswordUpdated(true)
+      
+      // Reset form and close modal
+      reset()
+      setDismissed(true)
+      
+      // Refresh to get updated profile data
       router.refresh()
       
     } catch (err) {

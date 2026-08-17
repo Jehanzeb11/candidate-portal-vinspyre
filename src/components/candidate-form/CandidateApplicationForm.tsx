@@ -59,10 +59,10 @@ const EMPLOYMENT_STATUS_API: Record<string, string> = {
   "Freelancing / Contract work": "freelancing_contract",
   "Unemployed": "unemployed",
   "Student / Fresh Graduate": "student_fresh_graduate",
-  "On a career break": "on_career_break",
+  "On a career break": "career_break",
   "Other": "other",
 };
-
+  
 const JOB_SEEKING_API: Record<string, string> = {
   "I am looking for a new opportunity": "looking_for_new_opportunity",
   "I am exploring a secondary opportunity along with my current job": "exploring_secondary_opportunity",

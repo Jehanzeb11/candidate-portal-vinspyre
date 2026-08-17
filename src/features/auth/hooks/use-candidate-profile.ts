@@ -10,6 +10,7 @@ export function useCandidateProfile() {
   const token = useAuthStore((s) => s.token ?? "")
   const email = useAuthStore((s) => s.user?.email ?? "")
   const setProfile = useAuthStore((s) => s.setProfile)
+  const setPasswordUpdated = useAuthStore((s) => s.setPasswordUpdated)
 
   const query = useQuery<CandidateProfile, Error>({
     queryKey: queryKeys.auth.candidateProfile(email),
@@ -23,8 +24,14 @@ export function useCandidateProfile() {
   })
 
   useEffect(() => {
-    if (query.data) setProfile(query.data)
-  }, [query.data, setProfile])
+    if (query.data) {
+      setProfile(query.data)
+      // Update password status based on API response
+      if (typeof query.data.isPasswordUpdated === 'boolean') {
+        setPasswordUpdated(query.data.isPasswordUpdated)
+      }
+    }
+  }, [query.data, setProfile, setPasswordUpdated])
 
   return query
 }
