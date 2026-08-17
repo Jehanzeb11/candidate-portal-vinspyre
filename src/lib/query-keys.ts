@@ -9,6 +9,10 @@ export const queryKeys = {
     candidateProfile: (email: string) => ["auth", "candidate-profile", email] as const,
   },
 
+  onboarding: {
+    list: ["onboarding", "list"] as const,
+  },
+
   assessment: {
     all: ["assessment"] as const,
     byApplication: (applicationId: string) => ["assessment", "application", applicationId] as const,

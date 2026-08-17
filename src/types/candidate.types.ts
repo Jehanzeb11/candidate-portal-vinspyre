@@ -116,6 +116,79 @@ export interface RecruitmentProgress {
   stages: RecruitmentStage[]
 }
 
+// ---------------------------------------------------------------------------
+// Onboarding types
+// ---------------------------------------------------------------------------
+
+export type OnboardingContentType = "video" | "document" | "article" | "quiz" | "link"
+export type OnboardingAssignmentStatus = "pending" | "in_progress" | "completed"
+
+export interface OnboardingContent {
+  id: string
+  title: string
+  description?: string
+  type: OnboardingContentType  // API uses "type" not "contentType"
+  url?: string                 // API uses "url" not "contentUrl"
+  playerUrl?: string
+  playbackFormat?: string
+  processingStatus?: string
+  processingError?: string | null
+  sourceFileName?: string | null
+  processedAt?: string | null
+  isRequired?: boolean
+  isActive?: boolean
+  createdByUserId?: string
+  createdAt?: string
+  updatedAt?: string
+  // Legacy fields for backward compatibility
+  contentType?: OnboardingContentType
+  contentUrl?: string
+  thumbnailUrl?: string
+  durationSeconds?: number
+  order?: number
+}
+
+export interface OnboardingAssignment {
+  id: string
+  onboardingId: string         // API uses this instead of candidateProfileId directly
+  contentId: string
+  content: OnboardingContent
+  status: OnboardingAssignmentStatus
+  progressPercent: number
+  durationSeconds?: number | null
+  watchedSeconds?: number | null
+  lastPositionSeconds?: number | null
+  viewCount?: number
+  startedAt?: string | null
+  lastOpenedAt?: string | null
+  completedAt?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CandidateOnboarding {
+  id: string
+  candidateProfileId: string
+  assignments: OnboardingAssignment[]
+  totalContent: number
+  completedContent: number
+  overallProgressPercent: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface OnboardingProgressPayload {
+  progressPercent: number
+  watchedSeconds?: number
+  lastPositionSeconds?: number
+  durationSeconds?: number
+}
+
+export interface OnboardingListResponse {
+  success: boolean
+  data: OnboardingAssignment[]
+}
+
 export interface CandidateProfile {
   id: string
   fullName: string
@@ -135,6 +208,7 @@ export interface CandidateProfile {
   portalSuspendedReason?: string | null
   jobApplications?: CandidateJobApplication[]
   candidateDocumentSubmissions?: CandidateDocumentSubmission[]
+  candidateOnboardings?: CandidateOnboarding[]
   offerAccess?: OfferAccess
   recruitmentProgress?: RecruitmentProgress
   createdAt?: string

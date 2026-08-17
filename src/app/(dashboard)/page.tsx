@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { CandidateDocumentUpload } from "@/components/documents/CandidateDocumentUpload"
 import { OfferAcceptanceModal } from "@/components/offer/OfferAcceptanceModal"
 import { useOfferToken } from "@/hooks/useOfferToken"
+import { OnboardingSection } from "@/features/onboarding/components/OnboardingSection"
 
 // ─── Stage icon mapping ─────────────────────────────────────────────────────
 
@@ -201,7 +202,6 @@ function RecruitmentTracker() {
         {recruitment.currentStage === "documents" && (() => {
           const documentsStage = stages.find((s) => s.key === "documents")
           const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
-          const hasSubmitted = (profile?.candidateDocumentSubmissions?.length ?? 0) > 0
           const canUpload = profile?.offerAccess?.canUploadDocuments ?? true
           return !isDocsDone && canUpload ? (
             <div className="mt-6 space-y-3">
@@ -228,6 +228,13 @@ function RecruitmentTracker() {
             </div>
           ) : null
         })()}
+
+        {/* Onboarding content — show if in onboarding stage */}
+        {recruitment.currentStage === "onboarding" && (
+          <div className="mt-6">
+            <OnboardingSection />
+          </div>
+        )}
 
         {/* Current stage description */}
         {recruitment.currentStage && (
