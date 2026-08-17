@@ -946,7 +946,7 @@ export default function AssessmentPage() {
               
             </div>
 
-              <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-6">
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6">
                 {currentQuestion.question}
               </h1>
 
