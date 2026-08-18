@@ -131,6 +131,11 @@ export function DocumentsUploadSection({ onSuccess }: DocumentsUploadSectionProp
       const body = await res.json().catch(() => null) as { message?: string } | null
 
       if (!res.ok) {
+        if (res.status === 401) {
+          useAuthStore.getState().clearUser()
+          window.location.href = "/login"
+          return
+        }
         throw new Error(body?.message ?? `Upload failed (${res.status})`)
       }
 

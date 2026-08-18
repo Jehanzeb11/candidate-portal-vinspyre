@@ -1,18 +1,29 @@
 "use client"
 
 import { useState } from "react"
-import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { useAuthStore } from "@/features/auth/store"
 import { ApiError } from "@/lib/api-fetch"
 
 function makeQueryClient() {
+  function handleUnauthorized() {
+    useAuthStore.getState().clearUser()
+    window.location.href = "/login"
+  }
+
   return new QueryClient({
     queryCache: new QueryCache({
       onError: (error) => {
         if (error instanceof ApiError && error.status === 401) {
-          useAuthStore.getState().clearUser()
-          window.location.href = "/login"
+          handleUnauthorized()
+        }
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => {
+        if (error instanceof ApiError && error.status === 401) {
+          handleUnauthorized()
         }
       },
     }),

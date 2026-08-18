@@ -635,6 +635,9 @@ export default function AssessmentPage() {
       setScore(scorePercentage)
       setPassed(isPassed)
 
+      // Dismiss the loading toast
+      toast.dismiss(toastId)
+
       // Show success screen first
       setJustSubmitted(true)
       setState("submitting")

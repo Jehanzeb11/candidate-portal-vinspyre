@@ -134,6 +134,11 @@ export function CandidateDocumentUpload({ onSuccess }: CandidateDocumentUploadPr
       const body = await res.json().catch(() => null) as { message?: string } | null
 
       if (!res.ok) {
+        if (res.status === 401) {
+          useAuthStore.getState().clearUser()
+          window.location.href = "/login"
+          return
+        }
         // Handle specific error cases
         if (res.status === 403) {
           throw new Error("An accepted offer is required before documents can be uploaded. Please wait for HR to accept your offer.")
@@ -208,7 +213,6 @@ export function CandidateDocumentUpload({ onSuccess }: CandidateDocumentUploadPr
             onClick={handleSubmit}
             disabled={!canSubmit}
             className="w-full"
-            size="lg"
           >
             {isUploading ? (
               <>
