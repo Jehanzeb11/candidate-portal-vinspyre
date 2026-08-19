@@ -13,7 +13,7 @@ import { MCQQuestion, FillBlankQuestion, DescriptiveQuestion } from "@/component
 import type { AssessmentAnswer, Assessment } from "@/types"
 import { useAuthStore } from "@/store"
 
-type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled"
+type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled" | "screen_recording_blocked"
 
 interface ViolationRecord {
   type: string
@@ -52,7 +52,10 @@ export default function AssessmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shouldAutoSubmit, setShouldAutoSubmit] = useState(false)
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false)
-  const [screenRecordingDetected, setScreenRecordingDetected] = useState(false);
+  const [screenRecordingDetected, setScreenRecordingDetected] = useState(false)
+  // Use a ref so toggling in-progress never triggers a re-render (and re-run of the polling effect)
+  const checkInProgressRef = useRef(false)
+  const [screenRecordingCheckInProgress, setScreenRecordingCheckInProgress] = useState(false)
   const [questionTimers, setQuestionTimers] = useState<Record<string, number>>({})
   const [justSubmitted, setJustSubmitted] = useState(false)
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null)
@@ -112,19 +115,17 @@ export default function AssessmentPage() {
       console.error("Error reporting violations:", error)
     }
   }, [assessment])
+  // ─── Extension message listener ─────────────────────────────────────────
   useEffect(() => {
-  const handleRecorderStatus = (event: MessageEvent) => {
-    if (event.data?.type !== "SCREEN_RECORDER_STATUS") return;
-
-    setScreenRecordingDetected(event.data.recording === true);
-  };
-
-  window.addEventListener("message", handleRecorderStatus);
-
-  return () => {
-    window.removeEventListener("message", handleRecorderStatus);
-  };
-}, []);
+    const handleRecorderStatus = (event: MessageEvent) => {
+      if (event.data?.type !== "SCREEN_RECORDER_STATUS") return
+      if (event.data.recording === true) {
+        setScreenRecordingDetected(true)
+      }
+    }
+    window.addEventListener("message", handleRecorderStatus)
+    return () => window.removeEventListener("message", handleRecorderStatus)
+  }, [])
 
   const recordViolation = useCallback((type: string, details?: string) => {
     const violation: ViolationRecord = {
@@ -365,8 +366,8 @@ export default function AssessmentPage() {
       // Screenshot shortcuts (cannot prevent, but can record)
       if (
         e.key === "PrintScreen" ||
-        (isMac && e.shiftKey && (e.metaKey as any) && e.key === "3") ||
-        (isMac && e.shiftKey && (e.metaKey as any) && e.key === "4")
+        (isMac && e.shiftKey && e.metaKey && e.key === "3") ||
+        (isMac && e.shiftKey && e.metaKey && e.key === "4")
       ) {
         recordViolation("screenshot_attempted", "Screenshot shortcut detected")
         // Browser cannot prevent OS-level screenshots
@@ -486,30 +487,105 @@ export default function AssessmentPage() {
   // ─── Handlers ────────────────────────────────────────────────────────────
 
   // ─── Screen Recording Detection ──────────────────────────────────────────
+  //
+  // Strategy (no browser permission prompts):
+  //  1. Query the "display-capture" permission — if "granted" a share is active
+  //  2. Inspect active MediaStreamTracks on the page for display-surface types
+  //  3. Listen to extension SCREEN_RECORDER_STATUS messages (handled above)
+  //
+  // getDisplayMedia() is intentionally NOT called here — it always opens a
+  // system dialog which is disruptive and would confuse the candidate.
+  // ──────────────────────────────────────────────────────────────────────────
+
   const checkScreenRecording = useCallback(async (): Promise<boolean> => {
+    let detected = false
+
+    // ── Method 1: Permission API ────────────────────────────────────────────
+    // Chrome/Edge 93+: query the display-capture permission without prompting.
     try {
-      const stream = await (navigator.mediaDevices as any).getDisplayMedia({
-        video: { width: 1, height: 1 },
-        audio: false,
-      })
-      // Stop immediately — we only needed to know if a surface was accessible
-      stream.getTracks().forEach((t: MediaStreamTrack) => t.stop())
-      // Any granted share = recording/sharing is active
-      return true
-    } catch (err: any) {
-      // NotAllowedError → user denied = no active share → safe to proceed
-      // NotFoundError   → no display to share → safe to proceed
-      return false
+      const result = await navigator.permissions.query(
+        { name: "display-capture" } as unknown as PermissionDescriptor
+      )
+      if (result.state === "granted") {
+        detected = true
+      }
+    } catch {
+      // Safari / Firefox don't support display-capture permission query — skip
     }
+
+    if (detected) return true
+
+    // ── Method 2: Scan active MediaStreamTracks for display surfaces ────────
+    // If any existing track on the page is a display/window/browser surface,
+    // screen sharing is already active.
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      // enumerateDevices() itself won't reveal sharing, but calling it
+      // refreshes the browser's internal device list and flushes the
+      // permission cache used by Method 1.
+      void devices
+    } catch {
+      // ignore
+    }
+
+    return false
   }, [])
 
-  // Run check whenever the instructions screen is shown
+  // ── Periodic poll on the instructions screen (every 3 s) ─────────────────
   useEffect(() => {
     if (state !== "instructions") return
-    checkScreenRecording().then(setScreenRecordingDetected)
+
+    // Use a ref for the in-progress guard so it never triggers a re-render
+    // (and therefore never causes this effect to re-run in a tight loop).
+    const runCheck = async () => {
+      if (checkInProgressRef.current) return
+      checkInProgressRef.current = true
+      setScreenRecordingCheckInProgress(true)
+      try {
+        const detected = await checkScreenRecording()
+        setScreenRecordingDetected(detected)
+      } finally {
+        checkInProgressRef.current = false
+        setScreenRecordingCheckInProgress(false)
+      }
+    }
+
+    void runCheck()
+    const interval = setInterval(runCheck, 3000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, checkScreenRecording])
 
+  // ── Continuous monitoring while taking the assessment ─────────────────────
+  // If screen recording is detected mid-test it is recorded as a violation.
+  useEffect(() => {
+    if (state !== "taking") return
+
+    const interval = setInterval(async () => {
+      const detected = await checkScreenRecording()
+      if (detected) {
+        setScreenRecordingDetected(true)
+        recordViolation(
+          "screen_recording_detected",
+          "Screen recording or sharing was detected during the assessment"
+        )
+      }
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [state, checkScreenRecording, recordViolation])
+
   const handleStartAssessment = async () => {
+    // Final guard — re-check synchronously before allowing start
+    const stillRecording = await checkScreenRecording()
+    if (stillRecording || screenRecordingDetected) {
+      setScreenRecordingDetected(true)
+      toast.error("🎥 Screen recording detected", {
+        description: "Please stop all screen sharing / recording software before starting.",
+        duration: 5000,
+      })
+      return
+    }
     await enterFullscreen()
     setAssessmentStartTime(Date.now())
     setState("taking")
@@ -569,7 +645,7 @@ export default function AssessmentPage() {
     }
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!assessment?.questions || isSubmitting) return
 
     setIsSubmitting(true)
@@ -657,7 +733,7 @@ export default function AssessmentPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
+  }, [assessment, applicationId, answers, violationRef, assessmentStartTime, isSubmitting, exitFullscreen, router])
 
   const handleFinish = async () => {
     await exitFullscreen()
@@ -832,18 +908,64 @@ export default function AssessmentPage() {
 
           {/* Screen recording warning */}
           {screenRecordingDetected && (
-            <div className="flex items-start gap-3 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/30 p-3.5 text-sm text-red-700 dark:text-red-300">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <span>
-                Screen recording detected. Stop all sharing software then{" "}
-                <button
-                  onClick={() => checkScreenRecording().then(setScreenRecordingDetected)}
-                  className="underline font-semibold"
-                >
-                  re-check
-                </button>
-                .
-              </span>
+            <div className="rounded-xl border border-red-300 dark:border-red-700/50 bg-red-50 dark:bg-red-950/40 p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 mt-0.5">
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-red-700 dark:text-red-300">
+                    🎥 Screen Recording / Sharing Detected
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1 leading-relaxed">
+                    Active screen capture was detected. This includes OBS, system recording, browser
+                    screen-share extensions, or any other capture software.
+                    You <strong>cannot start the assessment</strong> until all recording is stopped.
+                  </p>
+                </div>
+              </div>
+              <ul className="text-xs text-red-600 dark:text-red-400 ml-11 space-y-1 list-disc">
+                <li>Close OBS, Bandicam, or any recording software</li>
+                <li>Stop any browser screen-share / Meet / Zoom session</li>
+                <li>Disable screen-capture browser extensions</li>
+              </ul>
+              <button
+                onClick={async () => {
+                  if (checkInProgressRef.current) return
+                  checkInProgressRef.current = true
+                  setScreenRecordingCheckInProgress(true)
+                  const detected = await checkScreenRecording()
+                  setScreenRecordingDetected(detected)
+                  checkInProgressRef.current = false
+                  setScreenRecordingCheckInProgress(false)
+                  if (!detected) {
+                    toast.success("✅ No screen recording detected. You may now start.", { duration: 3000 })
+                  } else {
+                    toast.error("🎥 Screen recording is still active.", { duration: 3000 })
+                  }
+                }}
+                disabled={screenRecordingCheckInProgress}
+                className="ml-11 inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 dark:text-red-300 underline underline-offset-2 disabled:opacity-50"
+              >
+                {screenRecordingCheckInProgress ? "Checking…" : "Re-check now"}
+              </button>
+            </div>
+          )}
+
+          {/* No recording detected — reassurance */}
+          {!screenRecordingDetected && !screenRecordingCheckInProgress && state === "instructions" && (
+            <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30 px-3.5 py-2.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                No screen recording detected. Environment looks clean.
+              </p>
+            </div>
+          )}
+
+          {screenRecordingCheckInProgress && (
+            <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/40 px-3.5 py-2.5">
+              <Loader className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
+              <p className="text-xs text-muted-foreground">Checking for screen recording…</p>
             </div>
           )}
 
@@ -851,9 +973,9 @@ export default function AssessmentPage() {
           <Button
             onClick={handleStartAssessment}
             className="w-full h-11 text-sm font-semibold"
-            disabled={screenRecordingDetected}
+            disabled={screenRecordingDetected || screenRecordingCheckInProgress}
           >
-            Begin Assessment
+            {screenRecordingCheckInProgress ? "Checking environment…" : "Begin Assessment"}
           </Button>
         </div>
       </div>
@@ -931,7 +1053,7 @@ export default function AssessmentPage() {
               )} */}
               {violations.length > 0 && (
                 <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                  violation : {violations.length} / 3 
+                  violation : {violations.length} / 3
                 </span>
               )}
             </div>
@@ -946,12 +1068,12 @@ export default function AssessmentPage() {
               <p className="text-xs font-semibold text-muted-foreground tracking-widest uppercase mb-2">
                 {assessment.title || "Technical Assessment"}
               </p>
-              
+
             </div>
 
-              <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6">
-                {currentQuestion.question}
-              </h1>
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6">
+              {currentQuestion.question}
+            </h1>
 
             {/* Question content */}
             <div className="space-y-4 mb-12">
@@ -1180,8 +1302,8 @@ export default function AssessmentPage() {
           )}
           <div
             className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${passed
-                ? "bg-emerald-100 dark:bg-emerald-950/50"
-                : "bg-red-100 dark:bg-red-950/50"
+              ? "bg-emerald-100 dark:bg-emerald-950/50"
+              : "bg-red-100 dark:bg-red-950/50"
               }`}
           >
             {passed ? (
@@ -1288,10 +1410,10 @@ export default function AssessmentPage() {
                   <div
                     key={question.id}
                     className={`p-3 rounded-lg border ${notAnswered
-                        ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
-                        : isCorrect
-                          ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30"
-                          : "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/30"
+                      ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
+                      : isCorrect
+                        ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30"
+                        : "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/30"
                       }`}
                   >
                     <div className="flex items-start gap-2 mb-2">
@@ -1349,8 +1471,8 @@ export default function AssessmentPage() {
                   <div
                     key={question.id}
                     className={`p-3 rounded-lg border ${notAnswered
-                        ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
-                        : "border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-950/30"
+                      ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
+                      : "border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-950/30"
                       }`}
                   >
                     <div className="flex items-start gap-2">
