@@ -1144,7 +1144,7 @@ export default function AssessmentPage() {
 
             {/* Navigation Footer */}
             <div className="flex items-center justify-between gap-4 pt-6 border-t border-border/50">
-              <Button
+              {/* <Button
                 onClick={handlePreviousQuestion}
                 disabled={true}
                 // disabled={currentQuestionIndex === 0 || !isCurrentQuestionAnswered}
@@ -1153,7 +1153,7 @@ export default function AssessmentPage() {
                 title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
               >
                 Previous
-              </Button>
+              </Button> */}
 
               <div className="text-sm text-muted-foreground text-center">
                 {totalAnswered} of {assessment.questions.length} answered

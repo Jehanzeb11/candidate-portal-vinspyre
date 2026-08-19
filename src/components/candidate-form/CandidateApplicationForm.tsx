@@ -62,7 +62,7 @@ const EMPLOYMENT_STATUS_API: Record<string, string> = {
   "On a career break": "career_break",
   "Other": "other",
 };
-  
+
 const JOB_SEEKING_API: Record<string, string> = {
   "I am looking for a new opportunity": "looking_for_new_opportunity",
   "I am exploring a secondary opportunity along with my current job": "exploring_secondary_opportunity",
@@ -101,7 +101,8 @@ function buildFormData(data: CandidateFormValues, jobId?: string): FormData {
     data.currentEmploymentStatus === "Unemployed" ||
     data.currentEmploymentStatus === "On a career break";
 
-  fd.append("fullName", strip(data.fullName));
+  fd.append("firstName", strip(data.firstName));
+  fd.append("lastName", strip(data.lastName));
   fd.append("email", strip(data.email));
   fd.append("phone", strip(data.phone));
   fd.append("address", strip(data.address));
@@ -166,7 +167,8 @@ export function CandidateApplicationForm({ jobTitle, jobId, validTill }: Props) 
     mode: "onTouched",
     shouldUnregister: false,
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phone: "",
       address: "",
@@ -255,7 +257,7 @@ export function CandidateApplicationForm({ jobTitle, jobId, validTill }: Props) 
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">Thank You for Submitting!</h2>
             <h3 className="text-[#d81b60] text-2xl md:text-3xl font-bold">{submittedData.positionAppliedFor}</h3>
             <p className="text-slate-600 text-sm md:text-base max-w-lg mx-auto leading-relaxed">
-              Dear <span className="font-semibold text-slate-900">{submittedData.fullName}</span>, we've received your
+              Dear <span className="font-semibold text-slate-900">{submittedData.firstName} {submittedData.lastName}</span>, we've received your
               application.
             </p>
           </div>
@@ -281,7 +283,7 @@ export function CandidateApplicationForm({ jobTitle, jobId, validTill }: Props) 
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             {[
-              { label: "Full Name", value: submittedData.fullName },
+              { label: "Full Name", value: `${submittedData.firstName} ${submittedData.lastName}` },
               { label: "Email", value: submittedData.email },
               { label: "Phone", value: submittedData.phone },
               { label: "Position", value: submittedData.positionAppliedFor },
@@ -315,10 +317,10 @@ export function CandidateApplicationForm({ jobTitle, jobId, validTill }: Props) 
         </div>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
           Candidate Application Form  <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#d81b60] tracking-tight">(
-          {jobTitle})
-        </span>
+            {jobTitle})
+          </span>
         </h1>
-       
+
         <p className="text-slate-500 text-xs sm:text-sm mt-1">
           Fill in all sections below and submit your application.
         </p>

@@ -164,13 +164,13 @@ export default function ProfilePage() {
         <div className="flex items-start gap-5">
           <Avatar className="h-20 w-20 ring-4 ring-primary/15 shrink-0">
             <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-white text-2xl font-bold">
-              {getInitials(profile.fullName)}
+              {getInitials(`${profile.firstName} ${profile.lastName}`)}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
             <h1 className="text-[20px] font-bold text-foreground truncate">
-              {profile.fullName}
+              {`${profile.firstName} ${profile.lastName}`.trim()}
             </h1>
             {application?.positionAppliedFor && (
               <p className="text-sm text-muted-foreground font-medium mt-0.5">
@@ -190,8 +190,8 @@ export default function ProfilePage() {
       {/* ── Personal Information ───────────────────── */}
       <Section title="Personal Information">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Field label="First Name" value={profile.fullName?.split(" ")[0]} />
-          <Field label="Last Name" value={profile.fullName?.split(" ").slice(1).join(" ")} />
+          <Field label="First Name" value={profile.firstName} />
+          <Field label="Last Name" value={profile.lastName} />
           <Field label="Date of Birth" value={profile.age ? `Age ${profile.age}` : "—"} />
           <Field label="Email Address" value={profile.email} />
           <Field label="Phone Number" value={profile.phone} />

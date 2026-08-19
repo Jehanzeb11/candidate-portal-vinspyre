@@ -48,10 +48,7 @@ export default function LoginPage() {
         <Suspense fallback={<LoginFormSkeleton />}>
           <LoginForm />
         </Suspense>
-
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Sign in uses your backend email login endpoint and stores the returned candidate in app state.
-        </p>
+                                        
       </div>
     </main>
   )

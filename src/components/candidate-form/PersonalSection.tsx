@@ -38,14 +38,28 @@ export function PersonalSection({ register, errors }: PersonalSectionProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Full Name */}
-        <FormField label="Full Name" htmlFor="fullName" required icon={<User className="w-4 h-4" />} error={errors.fullName?.message}>
+        {/* First Name */}
+        <FormField label="First Name" htmlFor="firstName" required icon={<User className="w-4 h-4" />} error={errors.firstName?.message}>
           <input
-            id="fullName"
+            id="firstName"
             type="text"
-            placeholder="e.g. Muhammad Ali"
-            {...register("fullName", {
-              required: "Full name is required",
+            placeholder="e.g. Muhammad"
+            {...register("firstName", {
+              required: "First name is required",
+              minLength: { value: 2, message: "At least 2 characters required" },
+            })}
+            className={input}
+          />
+        </FormField>
+
+        {/* Last Name */}
+        <FormField label="Last Name" htmlFor="lastName" required icon={<User className="w-4 h-4" />} error={errors.lastName?.message}>
+          <input
+            id="lastName"
+            type="text"
+            placeholder="e.g. Ali"
+            {...register("lastName", {
+              required: "Last name is required",
               minLength: { value: 2, message: "At least 2 characters required" },
             })}
             className={input}

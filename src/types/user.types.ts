@@ -4,6 +4,12 @@
 
 export type UserRole = "admin" | "manager" | "user" | "viewer"
 
+export interface LatestApplication {
+  id: string
+  jobId: string
+  positionAppliedFor: string
+}
+
 export interface User {
   id: string
   name: string
@@ -12,4 +18,5 @@ export interface User {
   role: UserRole
   avatarUrl?: string
   createdAt?: string
+  latestApplication?: LatestApplication
 }
