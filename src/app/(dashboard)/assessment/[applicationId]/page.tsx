@@ -13,7 +13,7 @@ import { MCQQuestion, FillBlankQuestion, DescriptiveQuestion } from "@/component
 import type { AssessmentAnswer, Assessment } from "@/types"
 import { useAuthStore } from "@/store"
 
-type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled" | "screen_recording_blocked"
+type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled" | "screen_recording_blocked" | "violation_forced_submit"
 
 interface ViolationRecord {
   type: string
@@ -60,18 +60,21 @@ export default function AssessmentPage() {
   const [justSubmitted, setJustSubmitted] = useState(false)
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null)
   const [totalAssessmentDuration, setTotalAssessmentDuration] = useState(0)
+  const [forcedSubmitViolations, setForcedSubmitViolations] = useState<ViolationRecord[]>([])
 
   // Refs
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const pageRef = useRef<HTMLDivElement>(null)
   const violationRef = useRef<ViolationRecord[]>([])
   const submitRef = useRef(false)
+  const answersRef = useRef<Record<string, AssessmentAnswer>>({})
 
   // ─── Violation Recording ────────────────────────────────────────────────
   // ─── Report Violations to Backend ──────────────────────────────────────
   const reportViolationsToBackend = useCallback(async (violationsToReport: ViolationRecord[]) => {
     try {
-      const payload = {
+      // Step 1: Hit the violations API
+      const violationPayload = {
         testId: assessment?.id,
         candidateProfileId: assessment?.candidateProfileId,
         violations: violationsToReport.map((v) => ({
@@ -81,40 +84,68 @@ export default function AssessmentPage() {
         })),
       }
 
-      const response = await apiFetch<any>(ENDPOINTS.VIOLATION, {
+      await apiFetch<any>(ENDPOINTS.VIOLATION, {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(violationPayload),
       })
-
-      // If response indicates test is disabled
-      if (response.data?.isDisabled) {
-        toast.error("❌ Assessment Disabled", {
-          description: response.data.disabledReason || "Your test has been disabled due to violations.",
-          duration: 5000,
-        })
-
-        // Show violation disabled screen
-        setState("violation_disabled")
-
-        // Exit fullscreen
-        try {
-          if (document.fullscreenElement) {
-            await document.exitFullscreen()
-          }
-        } catch (e) {
-          console.error("Exit fullscreen error:", e)
-        }
-
-        // Logout after 3-4 seconds
-        setTimeout(() => {
-          clearUser()
-          router.push("/login")
-        }, 5000)
-      }
     } catch (error) {
       console.error("Error reporting violations:", error)
     }
-  }, [assessment])
+
+    // Step 2: Auto-submit the assessment
+    try {
+      const assessmentEndTime = Date.now()
+      const totalDurationSeconds = (assessment?.questions?.length || 0) * TIME_PER_QUESTION
+      const timeSpentSeconds = assessmentStartTime
+        ? Math.floor((assessmentEndTime - assessmentStartTime) / 1000)
+        : totalDurationSeconds
+
+      // Build answers object for API submission
+      const submissionAnswers: Record<string, string | number> = {}
+      const currentAnswers = answersRef.current
+      Object.entries(currentAnswers).forEach(([questionId, answer]) => {
+        if (answer.type === "mcq" && answer.selectedAnswerIndex !== undefined) {
+          const question = assessment?.questions?.find((q: any) => q.id === questionId)
+          if (question?.options) {
+            submissionAnswers[questionId] = question.options[answer.selectedAnswerIndex]
+          }
+        } else if (answer.freeTextAnswer !== undefined) {
+          submissionAnswers[questionId] = answer.freeTextAnswer
+        }
+      })
+
+      await apiFetch<any>(ENDPOINTS.SUBMIT_TEST, {
+        method: "POST",
+        body: JSON.stringify({
+          jobApplicationId: applicationId,
+          answers: submissionAnswers,
+          violations: violationsToReport,
+          totalDurationSeconds,
+          timeSpentSeconds,
+        }),
+      })
+    } catch (error) {
+      console.error("Error auto-submitting assessment after violations:", error)
+    }
+
+    // Step 3: Exit fullscreen and show violation forced-submit screen
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      }
+    } catch (e) {
+      console.error("Exit fullscreen error:", e)
+    }
+
+    setForcedSubmitViolations(violationsToReport)
+    setState("violation_forced_submit")
+
+    // Step 4: Log out after 8 seconds so the user has time to read
+    setTimeout(() => {
+      clearUser()
+      router.push("/login")
+    }, 8000)
+  }, [assessment, applicationId, assessmentStartTime, clearUser, router])
   // ─── Extension message listener ─────────────────────────────────────────
   useEffect(() => {
     const handleRecorderStatus = (event: MessageEvent) => {
@@ -138,16 +169,18 @@ export default function AssessmentPage() {
 
     const violationCount = violationRef.current.length
 
-    // Report to backend at exactly 3 violations
-    if (violationCount === 1000) {
-      reportViolationsToBackend(violationRef.current)
+    if (violationCount < 3) {
+      toast.warning(`⚠️ Violation #${violationCount}: ${type}`, {
+        description: `${3 - violationCount} more violation(s) will auto-submit your assessment.`,
+      })
     }
 
-    // Warn at threshold
-    if (violationCount === VIOLATION_THRESHOLD) {
-      toast.error(`⚠️ Assessment Violation #${violationCount}: ${type}`, {
-        description: "Suspicious activity detected. One more violation will disable your test.",
+    // At exactly 3 violations — report to backend, auto-submit, and logout
+    if (violationCount === 3) {
+      toast.error("🚨 Maximum violations reached. Your assessment is being submitted.", {
+        duration: 5000,
       })
+      reportViolationsToBackend(violationRef.current)
     }
   }, [reportViolationsToBackend])
 
@@ -591,6 +624,11 @@ export default function AssessmentPage() {
     setState("taking")
   }
 
+  // Keep answersRef in sync so reportViolationsToBackend always has the latest answers
+  useEffect(() => {
+    answersRef.current = answers
+  }, [answers])
+
   const handleSelectAnswer = (questionId: string, answerIndex: number) => {
     setAnswers((prev) => ({
       ...prev,
@@ -953,14 +991,14 @@ export default function AssessmentPage() {
           )}
 
           {/* No recording detected — reassurance */}
-          {!screenRecordingDetected && !screenRecordingCheckInProgress && state === "instructions" && (
+          {/* {!screenRecordingDetected && !screenRecordingCheckInProgress && state === "instructions" && (
             <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30 px-3.5 py-2.5">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
                 No screen recording detected. Environment looks clean.
               </p>
             </div>
-          )}
+          )} */}
 
           {screenRecordingCheckInProgress && (
             <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/40 px-3.5 py-2.5">
@@ -1180,6 +1218,67 @@ export default function AssessmentPage() {
             </div>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (state === "violation_forced_submit") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-red-950/30">
+        <Card className="max-w-lg w-full mx-4 border-red-200 dark:border-red-800/40">
+          <CardContent className="pt-6 text-center space-y-6">
+            {/* Icon */}
+            <div className="flex justify-center">
+              <div className="w-20 h-20 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-10 w-10 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+
+            {/* Heading */}
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
+                Assessment Auto-Submitted
+              </h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                You reached the maximum number of allowed violations. Your assessment has been
+                automatically submitted and your session will end shortly.
+              </p>
+            </div>
+
+            {/* Violations list */}
+            <div className="bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 rounded-lg p-4 text-left space-y-3">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300 text-center">
+                Violations that triggered auto-submit ({forcedSubmitViolations.length})
+              </p>
+              <ul className="space-y-2">
+                {forcedSubmitViolations.map((v, idx) => (
+                  <li
+                    key={idx}
+                    className="text-xs bg-white dark:bg-slate-900/50 rounded border border-red-200 dark:border-red-800 p-2.5 space-y-0.5"
+                  >
+                    <p className="font-semibold text-red-700 dark:text-red-300">
+                      #{idx + 1} — {v.type.replace(/_/g, " ")}
+                    </p>
+                    {v.details && (
+                      <p className="text-red-600 dark:text-red-400">{v.details}</p>
+                    )}
+                    <p className="text-muted-foreground text-[10px]">
+                      {new Date(v.timestamp).toLocaleTimeString()}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Logout countdown notice */}
+            <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-4">
+              <p className="text-xs text-red-700 dark:text-red-300">
+                ⏱️ You will be logged out automatically in a few seconds. Contact support if you believe
+                this is an error.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
