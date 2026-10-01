@@ -484,7 +484,7 @@ export function CandidateApplicationForm({
                       <Button
                         type="button"
                         onClick={() => handleNext(1)}
-                        className="px-8 py-3 bg-[#E9327C] hover:bg-[#D12C6F] text-white rounded-xl font-bold shadow-sm transition-all h-auto text-base"
+                        className="px-8 py-3 font-bold"
                       >
                         Continue →
                       </Button>
@@ -506,20 +506,21 @@ export function CandidateApplicationForm({
                       validTill={validTill}
                     />
                     <div className="mt-8 flex justify-between">
-                      <button
+                      <Button
+                        variant={"ghost"}
                         type="button"
                         onClick={handleBack}
-                        className="px-8 py-3 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
+                        className="px-8 py-3 border border-slate-200 font-bold"
                       >
                         &larr; Back
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => handleNext(2)}
-                        className="px-8 py-3 bg-[#E9327C] hover:bg-[#D12C6F] text-white rounded-xl font-bold shadow-sm transition-all"
+                        className="px-8 py-3  font-bold"
                       >
                         Continue →
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -569,13 +570,14 @@ export function CandidateApplicationForm({
                     )}
 
                     <div className="mt-8 pt-8 border-t border-slate-200 flex justify-start">
-                      <button
+                      <Button
                         type="button"
+                        variant={"ghost"}
                         onClick={handleBack}
-                        className="px-8 py-3 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
+                        className="px-8 py-3 border border-slate-200 font-bold"
                       >
                         &larr; Back
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
