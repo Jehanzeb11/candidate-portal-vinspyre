@@ -21,17 +21,17 @@ interface PersonalSectionProps {
 }
 
 const input =
-  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#d81b60] focus:ring-4 focus:ring-[#d81b60]/10 outline-none transition-all duration-200";
+  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200";
 
 const select =
-  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium focus:bg-white focus:border-[#d81b60] focus:ring-4 focus:ring-[#d81b60]/10 outline-none transition-all duration-200 appearance-none";
+  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200 appearance-none";
 
 export function PersonalSection({ register, errors }: PersonalSectionProps) {
   return (
     <div className="space-y-6">
       <div className="border-b border-slate-100 pb-3">
         <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <User className="w-5 h-5 text-[#d81b60]" />
+          <User className="w-5 h-5 text-[#E9327C]" />
           Personal Information
         </h3>
         <p className="text-xs text-slate-500 mt-1">Your basic contact and personal details.</p>

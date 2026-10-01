@@ -13,32 +13,12 @@ interface ResumeSectionProps {
 }
 
 const input =
-  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#d81b60] focus:ring-4 focus:ring-[#d81b60]/10 outline-none transition-all duration-200";
+  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200";
 
 export function ResumeSection({ register, errors, setValue }: ResumeSectionProps) {
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-100 pb-3">
-        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <UploadCloud className="w-5 h-5 text-[#d81b60]" />
-          Resume / CV
-        </h3>
-        <p className="text-xs text-slate-500 mt-1">
-          Upload your latest resume in PDF format.
-        </p>
-      </div>
-
-      <div className="p-6 bg-[#f8f9fa] border border-slate-200/90 rounded-2xl space-y-6">
-        <div className="flex items-center space-x-3 text-slate-700">
-          <div className="p-2.5 bg-rose-50 text-[#d81b60] rounded-xl shrink-0">
-            <FileCheck2 className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold text-slate-900">Upload Resume / CV</h4>
-            <p className="text-xs text-slate-500">PDF format only · Max 5 MB</p>
-          </div>
-        </div>
-
+      <div className="pt-2 pb-2">
         <FileUploadInput
           fieldName="cvFile"
           label="CV / Resume Document"

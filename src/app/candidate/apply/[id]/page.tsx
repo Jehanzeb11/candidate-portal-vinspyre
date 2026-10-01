@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { CandidateApplicationForm } from "@/components/candidate-form/CandidateApplicationForm"
+import { ApplyHeader } from "@/components/candidate-form/ApplyHeader"
 import type { JobDetails } from "@/components/candidate-form/types"
 
 export default function CandidateApplyPage() {
@@ -92,5 +93,10 @@ export default function CandidateApplyPage() {
     )
   }
 
-  return <div className="flex items-center w-full justify-center"><CandidateApplicationForm jobTitle={jobDetails.jobTitle} jobId={jobId} validTill={jobDetails.validTill ?? undefined} /></div>
+  return (
+    <div className="min-h-screen flex flex-col bg-[#fafafa]">
+      <ApplyHeader />
+      <CandidateApplicationForm jobTitle={jobDetails.jobTitle} jobId={jobId} validTill={jobDetails.validTill ?? undefined} />
+    </div>
+  )
 }

@@ -85,27 +85,20 @@ export const FileUploadInput: React.FC<FileUploadInputProps> = ({
   };
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between items-center">
-        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <UploadCloud className="w-4 h-4 text-slate-400" />
-          <span>{label}</span>
-          {required && <span className="text-rose-500 font-bold">*</span>}
-        </label>
-        <span className="text-[11px] text-slate-400 font-medium">{optional ? "Optional (" + hint + ")" : hint}</span>
-      </div>
+    <div className="space-y-1.5 w-full">
+      {/* Label intentionally removed for the exact visual match in the new step 3 design */}
 
       {!selectedFile ? (
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`relative border-2 border-dashed rounded-xl p-5 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer ${
+          className={`relative border-2 border-dashed rounded-[24px] py-14 px-6 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer ${
             isDragging
-              ? "border-[#d81b60] bg-rose-50/60 scale-[1.01]"
+              ? "border-[#E9327C] bg-rose-50/60 scale-[1.01]"
               : errorObj
               ? "border-rose-400 bg-rose-50/40 hover:border-rose-500"
-              : "border-slate-200 bg-[#f8f9fa] hover:border-[#d81b60]/50 hover:bg-slate-50/80 shadow-sm"
+              : "border-indigo-200/60 bg-[#FAFAFC] hover:border-[#E9327C]/50 hover:bg-slate-50 shadow-sm"
           }`}
         >
           <input
@@ -125,35 +118,34 @@ export const FileUploadInput: React.FC<FileUploadInputProps> = ({
             })}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
-          <div className="p-3 bg-[#d81b60]/10 text-[#d81b60] rounded-full mb-2.5">
-            <UploadCloud className="w-5 h-5" />
+          
+          <div className="w-14 h-14 bg-[#FCE7F3] rounded-2xl flex items-center justify-center mb-4">
+            <UploadCloud className="w-6 h-6 text-[#E9327C]" />
           </div>
-          <p className="text-xs font-semibold text-slate-700 mb-0.5">
-            <span className="text-[#d81b60] hover:underline">Click to upload</span> or drag and drop
+          
+          <h4 className="text-lg font-bold text-slate-900 mb-1">Upload Resume</h4>
+          <p className="text-sm text-slate-600 mb-4">
+            Drag &amp; drop your PDF here <br className="sm:hidden" />
+            or <span className="text-[#E9327C] font-bold underline decoration-[#E9327C]/30 underline-offset-4 hover:decoration-[#E9327C]">browse files</span>
           </p>
-          <p className="text-[11px] text-slate-400">Accepted formats: PDF up to 5MB</p>
+          <p className="text-xs text-slate-400">PDF only &middot; Maximum 5MB</p>
         </div>
       ) : (
-        <div className="flex items-center justify-between p-3.5 bg-[#f8f9fa] border border-emerald-300 rounded-xl shadow-sm">
-          <div className="flex items-center space-x-3 overflow-hidden">
-            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg shrink-0">
-              <FileText className="w-5 h-5" />
+        <div className="flex items-center justify-between p-4 bg-[#FAFAFC] border border-[#7fdcb5] rounded-[16px] shadow-sm">
+          <div className="flex items-center space-x-4 overflow-hidden">
+            <div className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-full shrink-0">
+              PDF
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-800 truncate flex items-center gap-1.5">
-                {selectedFile.name}
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              </p>
-              <p className="text-[11px] text-slate-500">{formatFileSize(selectedFile.size)}</p>
+              <p className="text-sm text-slate-500">{formatFileSize(selectedFile.size)}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleRemove}
-            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors ml-2 shrink-0"
-            title="Remove file"
+            className="text-sm font-bold text-rose-600 hover:text-rose-700 hover:underline transition-colors ml-2 shrink-0"
           >
-            <X className="w-4.5 h-4.5" />
+            Remove
           </button>
         </div>
       )}

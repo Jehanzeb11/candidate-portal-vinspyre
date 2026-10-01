@@ -30,7 +30,7 @@ export const FormField: React.FC<FormFieldProps> = ({
         >
           {icon && <span className="text-slate-400">{icon}</span>}
           <span>{label}</span>
-          {required && <span className="text-rose-500 font-bold ml-0.5">*</span>}
+          {required && <span className="text-rose-500 font-bold -mb-0.5 text-lg">*</span>}
         </label>
         {optional && (
           <span className="text-[11px] font-medium text-slate-400 capitalize">
