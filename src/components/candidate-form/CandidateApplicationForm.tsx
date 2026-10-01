@@ -517,7 +517,7 @@ export function CandidateApplicationForm({
                       <Button
                         type="button"
                         onClick={() => handleNext(2)}
-                        className="px-8 py-3  font-bold"
+                        className="px-8 py-3 font-bold"
                       >
                         Continue →
                       </Button>
