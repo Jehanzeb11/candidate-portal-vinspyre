@@ -20,25 +20,13 @@ import { useOfferToken } from "@/hooks/useOfferToken"
 import { OnboardingSection } from "@/features/onboarding/components/OnboardingSection"
 import { cn } from "@/utils/cn"
 
-// ─── Stage config ────────────────────────────────────────────────────────────
-
-const STAGES = [
-  { key: "applied",    label: "Applied",    icon: "✦" },
-  { key: "approval",   label: "Approval",   icon: "✦" },
-  { key: "assessment", label: "Assessment", icon: "✦" },
-  { key: "interview",  label: "Interview",  icon: "✦" },
-  { key: "offer",      label: "Offer",      icon: "✦" },
-  { key: "documents",  label: "Documents",  icon: "✦" },
-  { key: "onboarding", label: "Onboarding", icon: "✦" },
-] as const
-
 const stageDescriptions: Record<string, string> = {
-  applied:    "Your application has been submitted and is under review.",
-  approval:   "HR is reviewing your application details.",
+  applied: "Your application has been submitted and is under review.",
+  approval: "HR is reviewing your application details.",
   assessment: "Complete your skills and technical evaluation.",
-  interview:  "One or more interview rounds to be scheduled.",
-  offer:      "An offer letter has been extended to you.",
-  documents:  "Submit required documents to proceed.",
+  interview: "One or more interview rounds to be scheduled.",
+  offer: "An offer letter has been extended to you.",
+  documents: "Submit required documents to proceed.",
   onboarding: "Welcome aboard — complete your onboarding formalities.",
 }
 
@@ -72,8 +60,6 @@ function RecruitmentTracker() {
   const progressPercent = recruitment.progressPercent ?? 0
   const stages = recruitment.stages ?? []
 
-  const currentStageIndex = stages.findIndex((s) => s.status === "active")
-
   return (
     <div className="space-y-4">
       {/* ── Header card ── */}
@@ -86,10 +72,10 @@ function RecruitmentTracker() {
             <p className="mt-0.5 text-xs text-muted-foreground">
               {applications[0]?.createdAt
                 ? `Applied ${new Date(applications[0].createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}`
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}`
                 : "Recruitment in progress"}
             </p>
           </div>
@@ -140,8 +126,8 @@ function RecruitmentTracker() {
                       isCompleted
                         ? "bg-primary text-primary-foreground"
                         : isCurrent
-                        ? "bg-muted text-primary ring-2 ring-primary/30"
-                        : "bg-muted text-muted-foreground"
+                          ? "bg-muted text-primary ring-2 ring-primary/30"
+                          : "bg-muted text-muted-foreground"
                     )}
                   >
                     {isCompleted ? (
@@ -161,8 +147,8 @@ function RecruitmentTracker() {
                       isCompleted
                         ? "text-primary"
                         : isCurrent
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
                     )}
                   >
                     {stage.label}
@@ -172,8 +158,8 @@ function RecruitmentTracker() {
                   <span className={cn(
                     "text-[9px] font-semibold uppercase tracking-wide",
                     isCompleted ? "text-primary/70" :
-                    isCurrent ? "text-amber-500" :
-                    "text-transparent"
+                      isCurrent ? "text-amber-500" :
+                        "text-transparent"
                   )}>
                     {isCompleted ? "Done" : isCurrent ? "Active" : "—"}
                   </span>
@@ -257,16 +243,16 @@ function StatusPill({ status }: { status: string }) {
         status === "active"
           ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
           : status === "completed"
-          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
-          : "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-500"
+            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+            : "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-500"
       )}
     >
       <span
         className={cn(
           "h-1.5 w-1.5 rounded-full",
           status === "active" ? "bg-blue-500 animate-pulse" :
-          status === "completed" ? "bg-emerald-500" :
-          "bg-amber-500"
+            status === "completed" ? "bg-emerald-500" :
+              "bg-amber-500"
         )}
       />
       {status === "active" ? "In Progress" : status === "completed" ? "Completed" : "Pending"}

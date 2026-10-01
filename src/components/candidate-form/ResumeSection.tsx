@@ -13,7 +13,7 @@ interface ResumeSectionProps {
 }
 
 const input =
-  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200";
+  "w-full bg-[#fff] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200";
 
 export function ResumeSection({ register, errors, setValue }: ResumeSectionProps) {
   return (

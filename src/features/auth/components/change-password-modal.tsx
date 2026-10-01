@@ -39,7 +39,7 @@ type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
 const inputBase = cn(
-  "w-full rounded-xl border bg-muted/50 px-4 py-3 text-sm font-medium",
+  "w-full rounded-xl border bg-muted/50 px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium",
   "text-foreground placeholder:text-muted-foreground",
   "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
   "disabled:opacity-60 disabled:cursor-not-allowed transition-all"
@@ -61,7 +61,7 @@ function PasswordField({
   const [show, setShow] = useState(false)
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <label htmlFor={id} className="block text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
         {label}
       </label>
       <div className="relative">
@@ -115,17 +115,17 @@ export function ChangePasswordModal() {
       })
 
       toast.success("Password updated successfully!")
-      
+
       // Update the password status in the store
       setPasswordUpdated(true)
-      
+
       // Reset form and close modal
       reset()
       setDismissed(true)
-      
+
       // Refresh to get updated profile data
       router.refresh()
-      
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update password.")
     }
@@ -141,13 +141,13 @@ export function ChangePasswordModal() {
         className="sm:max-w-md"
       >
         <DialogHeader>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <KeyRound className="h-4 w-4 text-primary" />
+          <div className="flex flex-col items-center gap-2.5 mb-1">
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-primary/10">
+              <KeyRound className="h-7 w-7 sm:h-9 sm:w-9 text-primary" />
             </div>
-            <DialogTitle>Set Your Password</DialogTitle>
+            <DialogTitle className="text-xl sm:text-2xl font-extrabold text-center">Set Your Password</DialogTitle>
           </div>
-          <DialogDescription>
+          <DialogDescription className="text-center">
             You must set a new password before continuing. Use the temporary password you received to get started.
           </DialogDescription>
         </DialogHeader>
@@ -180,7 +180,7 @@ export function ChangePasswordModal() {
             disabled={isSubmitting}
             className={cn(
               "w-full flex items-center justify-center gap-2 rounded-xl mt-2",
-              "bg-primary text-white px-4 py-3 text-sm font-bold",
+              "bg-primary text-white px-4 py-2.5 sm:py-3 text-sm font-bold",
               "hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
               "disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             )}

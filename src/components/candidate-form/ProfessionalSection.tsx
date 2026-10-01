@@ -37,17 +37,10 @@ interface ProfessionalSectionProps {
 }
 
 const input =
-  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200";
+  "w-full bg-[#fff] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200";
 
 const select =
-  "w-full bg-[#f8f9fa] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium focus:bg-white focus:border-[#E9327C] focus:ring-4 focus:ring-[#E9327C]/10 outline-none transition-all duration-200 appearance-none";
-
-const radioRow = "flex flex-wrap items-center gap-x-6 gap-y-3";
-const radioLabel = "flex items-center gap-2.5 cursor-pointer text-sm font-semibold text-slate-700";
-const radioInput =
-  "w-4 h-4 text-[#E9327C] bg-white border-slate-300 focus:ring-[#E9327C] focus:ring-2 accent-[#E9327C]";
-const radioBox =
-  "md:col-span-2 bg-[#f8f9fa] p-4 rounded-xl border border-slate-200/90 shadow-sm space-y-3";
+  "w-full bg-[#fff] border border-slate-200/90 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium focus:bg-white focus:ring-0 outline-none transition-all duration-200 appearance-none";
 
 export function ProfessionalSection({
   register,
@@ -68,15 +61,6 @@ export function ProfessionalSection({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-100 pb-3">
-        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Briefcase className="w-5 h-5 text-[#E9327C]" />
-          Professional Information
-        </h3>
-        <p className="text-xs text-slate-500 mt-1">
-          Career details, salary expectations, and role specifics.
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -94,7 +78,7 @@ export function ProfessionalSection({
             placeholder="e.g. Senior Backend Engineer"
             {...register("positionAppliedFor", { required: "Position is required" })}
             readOnly={positionReadOnly}
-            className={`${input} ${positionReadOnly ? "bg-slate-100 cursor-not-allowed" : ""}`}
+            className={`${input} ${positionReadOnly ? "cursor-not-allowed" : ""}`}
           />
         </FormField>
 
@@ -345,105 +329,111 @@ export function ProfessionalSection({
           </select>
         </FormField>
 
-        {/* Evening Shift */}
-        <div className={radioBox}>
-          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-            Are you comfortable working the evening shift (7:00 PM – 4:00 AM)?{" "}
-            <span className="text-rose-500">*</span>
-          </label>
-          <div className={radioRow}>
-            <label className={radioLabel}>
-              <input type="radio" value="yes" {...register("comfortableEveningShift", { required: "Please select an option" })} className={radioInput} />
-              Yes, I am comfortable
-            </label>
-            <label className={radioLabel}>
-              <input type="radio" value="no" {...register("comfortableEveningShift", { required: "Please select an option" })} className={radioInput} />
-              No
-            </label>
-          </div>
-          {errors.comfortableEveningShift && (
-            <p className="text-xs text-rose-500 font-medium">{errors.comfortableEveningShift.message}</p>
-          )}
-        </div>
+        {/* ── Quick Questions ───────────────────────────────────────────── */}
+        <div className="md:col-span-2 mt-6 pt-6 border-t border-slate-200/60">
+          <h4 className="text-[15px] font-bold text-slate-500 mb-6">
+            A few quick questions
+          </h4>
 
-        {/* Worked With Us Before — hidden for freshers */}
-        {!isFresher && (
-          <div className={radioBox}>
-            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-              Have you worked with us before? <span className="text-rose-500">*</span>
-            </label>
-            <div className={radioRow}>
-              <label className={radioLabel}>
-                <input type="radio" value="yes" {...register("workedWithUsBefore", { required: "Please select an option" })} className={radioInput} />
-                Yes
+          <div className="space-y-8">
+            {/* Evening Shift */}
+            <div className="space-y-3">
+              <label className="text-[15px] font-bold text-slate-800 block">
+                Are you comfortable working evening shifts? <span className="text-[#E9327C]">*</span>
               </label>
-              <label className={radioLabel}>
-                <input type="radio" value="no" {...register("workedWithUsBefore", { required: "Please select an option" })} className={radioInput} />
-                No
-              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="flex items-center gap-3 cursor-pointer text-[15px] font-bold text-slate-800 border border-slate-200 rounded-2xl px-5 py-4 hover:border-slate-300 transition-colors bg-white shadow-xs">
+                  <input type="radio" value="yes" {...register("comfortableEveningShift", { required: "Please select an option" })} className="w-5 h-5 text-[#E9327C] bg-white border-slate-300 focus:ring-0 focus:ring-offset-0 focus:outline-none accent-[#E9327C] cursor-pointer" />
+                  Yes
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer text-[15px] font-bold text-slate-800 border border-slate-200 rounded-2xl px-5 py-4 hover:border-slate-300 transition-colors bg-white shadow-xs">
+                  <input type="radio" value="no" {...register("comfortableEveningShift", { required: "Please select an option" })} className="w-5 h-5 text-[#E9327C] bg-white border-slate-300 focus:ring-0 focus:ring-offset-0 focus:outline-none accent-[#E9327C] cursor-pointer" />
+                  No
+                </label>
+              </div>
+              {errors.comfortableEveningShift && (
+                <p className="text-xs text-rose-500 font-medium">{errors.comfortableEveningShift.message}</p>
+              )}
             </div>
-            {errors.workedWithUsBefore && (
-              <p className="text-xs text-rose-500 font-medium">{errors.workedWithUsBefore.message}</p>
+
+            {/* Worked With Us Before — hidden for freshers */}
+            {!isFresher && (
+              <div className="space-y-3">
+                <label className="text-[15px] font-bold text-slate-800 block">
+                  Have you worked with us before? <span className="text-[#E9327C]">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="flex items-center gap-3 cursor-pointer text-[15px] font-bold text-slate-800 border border-slate-200 rounded-2xl px-5 py-4 hover:border-slate-300 transition-colors bg-white shadow-xs">
+                    <input type="radio" value="yes" {...register("workedWithUsBefore", { required: "Please select an option" })} className="w-5 h-5 text-[#E9327C] bg-white border-slate-300 focus:ring-0 focus:ring-offset-0 focus:outline-none accent-[#E9327C] cursor-pointer" />
+                    Yes
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer text-[15px] font-bold text-slate-800 border border-slate-200 rounded-2xl px-5 py-4 hover:border-slate-300 transition-colors bg-white shadow-xs">
+                    <input type="radio" value="no" {...register("workedWithUsBefore", { required: "Please select an option" })} className="w-5 h-5 text-[#E9327C] bg-white border-slate-300 focus:ring-0 focus:ring-offset-0 focus:outline-none accent-[#E9327C] cursor-pointer" />
+                    No
+                  </label>
+                </div>
+                {errors.workedWithUsBefore && (
+                  <p className="text-xs text-rose-500 font-medium">{errors.workedWithUsBefore.message}</p>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {/* Reference */}
-        <div className={`${radioBox} space-y-4`}>
-          <div>
-            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-2.5">
-              Do you have any reference? <span className="text-rose-500">*</span>
-            </label>
-            <div className={radioRow}>
-              <label className={radioLabel}>
-                <input type="radio" value="yes" {...register("hasReference", { required: "Please select an option" })} className={radioInput} />
-                Yes
+            {/* Reference */}
+            <div className="space-y-3">
+              <label className="text-[15px] font-bold text-slate-800 block">
+                Do you have any references? <span className="text-[#E9327C]">*</span>
               </label>
-              <label className={radioLabel}>
-                <input type="radio" value="no" {...register("hasReference", { required: "Please select an option" })} className={radioInput} />
-                No
-              </label>
-            </div>
-            {errors.hasReference && (
-              <p className="text-xs text-rose-500 font-medium mt-1">{errors.hasReference.message}</p>
-            )}
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="flex items-center gap-3 cursor-pointer text-[15px] font-bold text-slate-800 border border-slate-200 rounded-2xl px-5 py-4 hover:border-slate-300 transition-colors bg-white shadow-xs">
+                  <input type="radio" value="yes" {...register("hasReference", { required: "Please select an option" })} className="w-5 h-5 text-[#E9327C] bg-white border-slate-300 focus:ring-0 focus:ring-offset-0 focus:outline-none accent-[#E9327C] cursor-pointer" />
+                  Yes
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer text-[15px] font-bold text-slate-800 border border-slate-200 rounded-2xl px-5 py-4 hover:border-slate-300 transition-colors bg-white shadow-xs">
+                  <input type="radio" value="no" {...register("hasReference", { required: "Please select an option" })} className="w-5 h-5 text-[#E9327C] bg-white border-slate-300 focus:ring-0 focus:ring-offset-0 focus:outline-none accent-[#E9327C] cursor-pointer" />
+                  No
+                </label>
+              </div>
+              {errors.hasReference && (
+                <p className="text-xs text-rose-500 font-medium mt-1">{errors.hasReference.message}</p>
+              )}
 
-          {/* Reference detail fields */}
-          {hasReference === "yes" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-300">
-              <FormField
-                label="Reference Name"
-                htmlFor="referenceName"
-                required
-                icon={<Users className="w-4 h-4" />}
-                error={errors.referenceName?.message}
-              >
-                <input
-                  id="referenceName"
-                  type="text"
-                  placeholder="e.g. John Doe"
-                  {...register("referenceName", { required: "Reference name is required" })}
-                  className={input}
-                />
-              </FormField>
-              <FormField
-                label="Reference Relationship"
-                htmlFor="referenceRelationship"
-                required
-                icon={<Users className="w-4 h-4" />}
-                error={errors.referenceRelationship?.message}
-              >
-                <input
-                  id="referenceRelationship"
-                  type="text"
-                  placeholder="e.g. Former Manager"
-                  {...register("referenceRelationship", { required: "Reference relationship is required" })}
-                  className={input}
-                />
-              </FormField>
+              {/* Reference detail fields */}
+              {hasReference === "yes" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-2">
+                  <FormField
+                    label="Reference Name"
+                    htmlFor="referenceName"
+                    required
+                    icon={<Users className="w-4 h-4" />}
+                    error={errors.referenceName?.message}
+                  >
+                    <input
+                      id="referenceName"
+                      type="text"
+                      placeholder="e.g. John Doe"
+                      {...register("referenceName", { required: "Reference name is required" })}
+                      className={input}
+                    />
+                  </FormField>
+                  <FormField
+                    label="Reference Relationship"
+                    htmlFor="referenceRelationship"
+                    required
+                    icon={<Users className="w-4 h-4" />}
+                    error={errors.referenceRelationship?.message}
+                  >
+                    <input
+                      id="referenceRelationship"
+                      type="text"
+                      placeholder="e.g. Former Manager"
+                      {...register("referenceRelationship", { required: "Reference relationship is required" })}
+                      className={input}
+                    />
+                  </FormField>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
       </div>

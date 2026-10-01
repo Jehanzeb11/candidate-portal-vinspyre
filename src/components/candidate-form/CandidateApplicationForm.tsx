@@ -393,16 +393,16 @@ export function CandidateApplicationForm({
 
               <div className="flex items-center justify-between relative mt-10 mb-4 w-full">
                 {/* Connecting lines */}
-                <div className={`absolute top-[18px] left-[22%] w-[22%] h-[2px] ${submittedData || currentStep > 1 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
-                <div className={`absolute top-[18px] left-[56%] w-[22%] h-[2px] ${submittedData || currentStep > 2 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
+                <div className={`absolute top-[18px] left-[23%] w-[20%] h-[3px] ${submittedData || currentStep > 1 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
+                <div className={`absolute top-[18px] left-[57%] w-[20%] h-[3px] ${submittedData || currentStep > 2 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
 
                 {/* Step 1 */}
                 <div className="flex flex-col items-center relative z-10 w-1/3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4  ${submittedData || currentStep > 1
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mb-4  ${submittedData || currentStep > 1
                     ? "bg-[#E9327C] text-white"
                     : "border-2 border-[#E9327C] text-[#E9327C] ring-[6px] ring-pink-50"
                     }`}>
-                    {submittedData || currentStep > 1 ? <Check className="w-4 h-4 stroke-[3]" /> : "01"}
+                    {submittedData || currentStep > 1 ? <Check className="w-5 h-5 stroke-[3]" /> : "01"}
                   </div>
                   <p className="font-bold text-slate-900 text-[10px] md:text-xs text-center leading-tight mt-2 md:mt-0">Personal Information</p>
                   <p className={`text-[10px] mt-1 ${submittedData || currentStep > 1 ? "text-slate-800" : "text-[#E9327C] font-bold"}`}>
@@ -412,13 +412,13 @@ export function CandidateApplicationForm({
 
                 {/* Step 2 */}
                 <div className="flex flex-col items-center relative z-10 w-1/3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4 ${submittedData || currentStep > 2
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mb-4 ${submittedData || currentStep > 2
                     ? "bg-[#E9327C] text-white"
                     : currentStep === 2
                       ? "border-2 border-[#E9327C] text-[#E9327C] ring-[6px] ring-pink-50"
                       : "border-2 border-slate-200 text-slate-400"
                     }`}>
-                    {submittedData || currentStep > 2 ? <Check className="w-4 h-4 stroke-[3]" /> : "02"}
+                    {submittedData || currentStep > 2 ? <Check className="w-5 h-5 stroke-[3]" /> : "02"}
                   </div>
                   <p className="font-bold text-slate-900 text-[10px] md:text-xs text-center leading-tight mt-2 md:mt-0">Professional Background</p>
                   <p className={`text-[10px] mt-1 ${submittedData || currentStep > 2 ? "text-slate-800" : currentStep === 2 ? "text-[#E9327C] font-bold" : "text-slate-400"
@@ -429,13 +429,13 @@ export function CandidateApplicationForm({
 
                 {/* Step 3 */}
                 <div className="flex flex-col items-center relative z-10 w-1/3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4 ${submittedData
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mb-4 ${submittedData
                     ? "bg-[#E9327C] text-white"
                     : currentStep === 3
                       ? "border-2 border-[#E9327C] text-[#E9327C] ring-[6px] ring-pink-50"
                       : "border-2 border-slate-200 text-slate-400"
                     }`}>
-                    {submittedData ? <Check className="w-4 h-4 stroke-[3]" /> : "03"}
+                    {submittedData ? <Check className="w-5 h-5 stroke-[3]" /> : "03"}
                   </div>
                   <p className="font-bold text-slate-900 text-[10px] md:text-xs text-center leading-tight mt-2 md:mt-0">Resume & Submit</p>
                   <p className={`text-[10px] mt-1 ${submittedData ? "text-slate-800" : currentStep === 3 ? "text-[#E9327C] font-bold" : "text-slate-400"}`}>
