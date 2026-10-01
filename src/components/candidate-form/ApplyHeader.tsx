@@ -28,7 +28,7 @@ export function ApplyHeader() {
         <div className="flex items-center gap-3">
           <span className="text-sm text-slate-500 font-semibold hidden sm:block">Already applied?</span>
           <Link
-            href="/candidate/login"
+            href="/login"
             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-[#1e293b] hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
           >
             Candidate Portal

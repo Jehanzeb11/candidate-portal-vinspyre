@@ -1,20 +1,16 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
-import { BarChart3, Package, Shield, Sparkles, Users } from "lucide-react"
 import { LoginForm } from "@/features/auth/components/login-form"
 import { APP_NAME } from "@/constants"
+import LoginBG from "@/assets/login-bg.png"
+import logo from "@/assets/white-logo.png"
+import iconLogo from "@/assets/icon-logo.png"
+import Image from "next/image"
 
 export const metadata: Metadata = {
-  title: `Sign In — ${APP_NAME}`,
-  description: "Sign in to your admin dashboard.",
+  title: `Sign In — Candidate`,
+  description: "Sign in to your candidate dashboard.",
 }
-
-const features = [
-  { icon: BarChart3, label: "Real-time analytics & charts" },
-  { icon: Package,   label: "Inventory & catalog management" },
-  { icon: Users,     label: "Team access & role controls" },
-  { icon: Shield,    label: "Email-only candidate sign-in" },
-]
 
 function LoginFormSkeleton() {
   return (
@@ -30,26 +26,56 @@ function LoginFormSkeleton() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8">
-      {/* Background decoration blur (subtle) */}
-      <div className="absolute top-0 left-0 right-0 h-96 bg-linear-to-b from-primary/5 to-transparent blur-3xl pointer-events-none" />
+    <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#0a0d1a]">
+      {/* Background Image */}
+      <Image
+        src={LoginBG}
+        alt="Background"
+        fill
+        priority
+        className="object-cover object-center pointer-events-none select-none z-0"
+      />
 
-      <div className="w-full max-w-[460px] bg-white dark:bg-zinc-900 rounded-[40px] border border-zinc-100 dark:border-zinc-800 shadow-xl p-8 sm:p-12 relative z-10">
-        {/* Logo / Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-            Welcome back 👋
-          </h2>
-          <p className="mt-2.5 text-sm text-muted-foreground font-medium">
-            Sign in to your {APP_NAME} workspace
-          </p>
+      <div className="relative z-10 w-full max-w-[480px] flex flex-col items-center my-auto">
+        {/* Top Header Logo */}
+        <div className="mb-7 flex justify-center">
+          <Image
+            src={logo}
+            alt="Vinspyre"
+            width={200}
+            height={48}
+            className="h-14 sm:h-16 w-auto object-contain drop-shadow-md"
+            priority
+          />
         </div>
 
-        <Suspense fallback={<LoginFormSkeleton />}>
-          <LoginForm />
-        </Suspense>
-                                        
+        {/* Card */}
+        <div className="w-full bg-white text-zinc-900 rounded-[32px] shadow-2xl p-8 sm:p-10 border border-white/20">
+          {/* Card Icon & Header */}
+          <div className="flex flex-col items-center text-center mb-7">
+            <div className="w-14 h-14 rounded-2xl bg-pink-50/80 flex items-center justify-center mb-4 shadow-xs">
+              <Image
+                src={iconLogo}
+                alt="Icon"
+                width={36}
+                height={36}
+                className="w-8 h-8 object-contain"
+              />
+            </div>
+            <h1 className="text-2xl sm:text-[36px] font-extrabold tracking-tight text-[#0F172A]">
+              Welcome back
+            </h1>
+            <p className="mt-1.5 text-sm sm:text-base text-slate-500 font-medium">
+              Sign in to your Candidate Portal
+            </p>
+          </div>
+
+          <Suspense fallback={<LoginFormSkeleton />}>
+            <LoginForm />
+          </Suspense>
+        </div>
       </div>
     </main>
   )
 }
+
