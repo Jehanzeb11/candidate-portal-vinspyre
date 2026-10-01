@@ -182,6 +182,8 @@ export interface JobDetails {
   id: string;
   jobTitle: string;
   location?: string;
+  experience?: string;
+  employmentType?: string;
   shiftTimings?: string;
   aboutRole?: string;
   keyResponsibilities?: string;

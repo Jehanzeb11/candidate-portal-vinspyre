@@ -11,6 +11,7 @@ import { ResumeSection } from "./ResumeSection";
 import vpImg from "@/assets/vp-apply.png"
 import { Button } from "../ui/button";
 import Image from "next/image";
+import Link from "next/link";
 
 const API_URL =
   process.env.NEXT_PUBLIC_CANDIDATE_PROFILE_API_URL ??
@@ -158,16 +159,14 @@ interface Props {
   employmentType?: string;
   location?: string;
   experience?: string;
+  details?: any;
 }
 
 export function CandidateApplicationForm({
   jobTitle,
   jobId,
   validTill,
-  department = "Creative",
-  employmentType = "Full-Time",
-  location = "Remote",
-  experience = "2+ years"
+  details
 }: Props) {
   const [submittedData, setSubmittedData] = useState<CandidateFormValues | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -263,67 +262,6 @@ export function CandidateApplicationForm({
     }
   };
 
-  // ── Success screen ────────────────────────────────────────────────────────
-  if (submittedData) {
-    return (
-      <div className="max-w-4xl mx-auto bg-white  p-5 md:p-8 text-slate-800 md:my-4 m-2">
-        <div className="text-center space-y-2 mb-8">
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto border-2 border-emerald-300 shadow-lg">
-            <CheckCircle2 className="w-10 h-10 md:w-12 md:h-12" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">Thank You for Submitting!</h2>
-            <h3 className="text-[#E9327C] text-2xl md:text-3xl font-bold">{submittedData.positionAppliedFor}</h3>
-            <p className="text-slate-600 text-sm md:text-base max-w-lg mx-auto leading-relaxed">
-              Dear <span className="font-semibold text-slate-900">{submittedData.firstName} {submittedData.lastName}</span>, we've received your
-              application.
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 md:p-6 mb-6 space-y-3">
-          <h3 className="text-base md:text-lg font-bold text-emerald-900 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5" />
-            What happens next?
-          </h3>
-          <ul className="text-sm text-emerald-800 space-y-2 ml-7">
-            <li>✓ Your application has been successfully submitted</li>
-            <li>✓ Our recruitment team will review within 1–2 business days</li>
-            <li>✓ You'll receive updates at <span className="font-semibold">{submittedData.email}</span></li>
-            {/* <li>✓ Check your inbox (including spam) for further instructions</li> */}
-          </ul>
-        </div>
-
-        <div className="bg-slate-50  md:p-6 space-y-4 shadow-sm">
-          <h3 className="text-base md:text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-            <FileCheck className="w-5 h-5 text-[#E9327C]" />
-            Application Summary
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            {[
-              { label: "Full Name", value: `${submittedData.firstName} ${submittedData.lastName}` },
-              { label: "Email", value: submittedData.email },
-              { label: "Phone", value: submittedData.phone },
-              { label: "Position", value: submittedData.positionAppliedFor },
-              { label: "Experience", value: submittedData.yearsOfExperience || "N/A" },
-              { label: "Expected Salary", value: submittedData.expectedSalary ? `PKR ${submittedData.expectedSalary}` : "N/A" },
-            ].map(({ label, value }) => (
-              <div key={label} className="pb-3 border-b border-slate-200 last:border-0">
-                <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider mb-1">{label}</span>
-                <span className="font-semibold text-slate-800 text-sm">{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 mb-2 text-center text-slate-600 text-sm">
-          <p>If you have any questions, feel free to reach out.</p>
-          <p className="mt-2 text-slate-500">Best of luck! 🚀</p>
-        </div>
-      </div>
-    );
-  }
-
   const handleNext = async (step: number) => {
     let isValid = false;
     if (step === 1) {
@@ -413,20 +351,22 @@ export function CandidateApplicationForm({
                 <div className="flex justify-between items-start mb-1">
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">{jobTitle}</h2>
                   <div className="flex items-baseline gap-0.5 shrink-0 ml-4 md:ml-6">
-                    <span className="text-3xl sm:text-4xl md:text-[48px] font-bold leading-none">{Math.round(((currentStep - 1) / 3) * 100)}</span>
+                    <span className="text-3xl sm:text-4xl md:text-[48px] font-bold leading-none">
+                      {submittedData ? 100 : Math.round(((currentStep - 1) / 3) * 100)}
+                    </span>
                     <span className="text-lg md:text-xl text-slate-400 font-bold">%</span>
                   </div>
                 </div>
 
                 {/* Subtitle row: department left, Completed right */}
                 <div className="flex justify-between items-center mb-5">
-                  <p className="text-slate-400 text-xs sm:text-sm md:text-base">{department} &middot; {employmentType}</p>
+                  <p className="text-slate-400 text-xs sm:text-sm md:text-base">{details?.employmentType}</p>
                   <p className="text-xs sm:text-sm text-slate-400 shrink-0 ml-2 sm:ml-6">Completed</p>
                 </div>
 
                 {/* Progress bar */}
                 <div className="w-full bg-slate-500/40 h-1.5 rounded-full overflow-hidden mb-5">
-                  <div className="bg-[#E9327C] h-full rounded-full transition-all duration-500" style={{ width: `${((currentStep - 1) / 3) * 100}%` }} />
+                  <div className="bg-[#E9327C] h-full rounded-full transition-all duration-500" style={{ width: `${submittedData ? 100 : ((currentStep - 1) / 3) * 100}%` }} />
                 </div>
 
                 {/* Bottom row */}
@@ -447,183 +387,200 @@ export function CandidateApplicationForm({
                   <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">Your application journey</h2>
                 </div>
                 <div className="text-slate-500 font-medium text-sm mt-1">
-                  Step {currentStep} of 3
+                  {submittedData ? "Application submitted" : `Step ${currentStep} of 3`}
                 </div>
               </div>
 
               <div className="flex items-center justify-between relative mt-10 mb-4 w-full">
                 {/* Connecting lines */}
-                <div className={`absolute top-[18px] left-[22%] w-[22%] h-[2px] ${currentStep > 1 ? "bg-slate-200" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
-                <div className={`absolute top-[18px] left-[56%] w-[22%] h-[2px] ${currentStep > 2 ? "bg-slate-200" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
+                <div className={`absolute top-[18px] left-[22%] w-[22%] h-[2px] ${submittedData || currentStep > 1 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
+                <div className={`absolute top-[18px] left-[56%] w-[22%] h-[2px] ${submittedData || currentStep > 2 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
 
                 {/* Step 1 */}
                 <div className="flex flex-col items-center relative z-10 w-1/3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4 bg-white ${currentStep > 1
-                    ? "border-2 border-slate-200 text-slate-400"
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4  ${submittedData || currentStep > 1
+                    ? "bg-[#E9327C] text-white"
                     : "border-2 border-[#E9327C] text-[#E9327C] ring-[6px] ring-pink-50"
                     }`}>
-                    {currentStep > 1 ? <Check className="w-4 h-4 stroke-[3]" /> : "01"}
+                    {submittedData || currentStep > 1 ? <Check className="w-4 h-4 stroke-[3]" /> : "01"}
                   </div>
                   <p className="font-bold text-slate-900 text-[10px] md:text-xs text-center leading-tight mt-2 md:mt-0">Personal Information</p>
-                  <p className={`text-[10px] mt-1 ${currentStep > 1 ? "text-slate-800" : "text-[#E9327C] font-bold"}`}>
-                    {currentStep > 1 ? "Completed" : "In progress"}
+                  <p className={`text-[10px] mt-1 ${submittedData || currentStep > 1 ? "text-slate-800" : "text-[#E9327C] font-bold"}`}>
+                    {submittedData || currentStep > 1 ? "Completed" : "In progress"}
                   </p>
                 </div>
 
                 {/* Step 2 */}
                 <div className="flex flex-col items-center relative z-10 w-1/3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4 bg-white ${currentStep > 2
-                    ? "border-2 border-slate-200 text-slate-400"
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4 ${submittedData || currentStep > 2
+                    ? "bg-[#E9327C] text-white"
                     : currentStep === 2
                       ? "border-2 border-[#E9327C] text-[#E9327C] ring-[6px] ring-pink-50"
                       : "border-2 border-slate-200 text-slate-400"
                     }`}>
-                    {currentStep > 2 ? <Check className="w-4 h-4 stroke-[3]" /> : "02"}
+                    {submittedData || currentStep > 2 ? <Check className="w-4 h-4 stroke-[3]" /> : "02"}
                   </div>
                   <p className="font-bold text-slate-900 text-[10px] md:text-xs text-center leading-tight mt-2 md:mt-0">Professional Background</p>
-                  <p className={`text-[10px] mt-1 ${currentStep > 2 ? "text-slate-800" : currentStep === 2 ? "text-[#E9327C] font-bold" : "text-slate-400"
+                  <p className={`text-[10px] mt-1 ${submittedData || currentStep > 2 ? "text-slate-800" : currentStep === 2 ? "text-[#E9327C] font-bold" : "text-slate-400"
                     }`}>
-                    {currentStep > 2 ? "Completed" : currentStep === 2 ? "In progress" : "Upcoming"}
+                    {submittedData || currentStep > 2 ? "Completed" : currentStep === 2 ? "In progress" : "Upcoming"}
                   </p>
                 </div>
 
                 {/* Step 3 */}
                 <div className="flex flex-col items-center relative z-10 w-1/3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4 bg-white ${currentStep === 3
-                    ? "border-2 border-[#E9327C] text-[#E9327C] ring-[6px] ring-pink-50"
-                    : "border-2 border-slate-200 text-slate-400"
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-4 ${submittedData
+                    ? "bg-[#E9327C] text-white"
+                    : currentStep === 3
+                      ? "border-2 border-[#E9327C] text-[#E9327C] ring-[6px] ring-pink-50"
+                      : "border-2 border-slate-200 text-slate-400"
                     }`}>
-                    03
+                    {submittedData ? <Check className="w-4 h-4 stroke-[3]" /> : "03"}
                   </div>
                   <p className="font-bold text-slate-900 text-[10px] md:text-xs text-center leading-tight mt-2 md:mt-0">Resume & Submit</p>
-                  <p className={`text-[10px] mt-1 ${currentStep === 3 ? "text-[#E9327C] font-bold" : "text-slate-800"}`}>
-                    {currentStep === 3 ? "In progress" : "Upcoming"}
+                  <p className={`text-[10px] mt-1 ${submittedData ? "text-slate-800" : currentStep === 3 ? "text-[#E9327C] font-bold" : "text-slate-400"}`}>
+                    {submittedData ? "Completed" : currentStep === 3 ? "In progress" : "Upcoming"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5 bg-white border border-slate-100 rounded-[32px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-
-              {/* Header for Form Content */}
-              <div className="px-6 md:px-8 pt-8 pb-2">
-                <p className="text-[#E9327C] text-[10px] font-bold tracking-[0.2em] uppercase mb-1">Step {currentStep} of 3</p>
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                  {currentStep === 1 && "Personal Information"}
-                  {currentStep === 2 && "Professional Background"}
-                  {currentStep === 3 && "Resume / CV"}
-                </h2>
-                <p className="text-sm text-slate-500 mt-2">
-                  {currentStep === 1 && "Tell us a little about yourself."}
-                  {currentStep === 2 && "Share your professional journey with us."}
-                  {currentStep === 3 && "Upload your latest resume and complete your application."}
+            {submittedData ? (
+              <div className="bg-white border border-slate-100 rounded-[32px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] py-20 px-8 text-center flex flex-col items-center justify-center min-h-[400px]">
+                <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-8">
+                  <Check className="w-10 h-10 text-[#E9327C] stroke-[2]" />
+                </div>
+                <h2 className="text-3xl font-extrabold text-[#111B3A] mb-4 tracking-tight">Application received</h2>
+                <p className="text-slate-600 mb-8 max-w-md mx-auto text-sm leading-relaxed">
+                  Thanks, {submittedData.firstName}. We sent a confirmation to <span className="font-bold text-slate-900">{submittedData.email}</span>. Use Candidate Portal Login to track your application status.
                 </p>
+                <Link href="/login" className="px-6 py-3 bg-[#111B3A] text-white rounded-xl font-bold hover:bg-[#1A2954] transition-colors shadow-sm">
+                  Go to Candidate Portal
+                </Link>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5 bg-white border border-slate-100 rounded-[32px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
 
-              {/* Section 1 — Personal Info */}
-              <div className={currentStep === 1 ? "block" : "hidden"}>
-                <div className="px-4 sm:px-6 md:px-8 pb-8">
-                  <PersonalSection register={register} errors={errors} watch={watch} setValue={setValue} />
-                  <div className="mt-8 flex justify-end">
-                    <Button
-                      type="button"
-                      onClick={() => handleNext(1)}
-                      className="px-8 py-3 bg-[#E9327C] hover:bg-[#D12C6F] text-white rounded-xl font-bold shadow-sm transition-all"
-                    >
-                      Continue →
-                    </Button>
-                  </div>
+                {/* Header for Form Content */}
+                <div className="px-6 md:px-8 pt-8 pb-2">
+                  <p className="text-[#E9327C] text-[10px] font-bold tracking-[0.2em] uppercase mb-1">Step {currentStep} of 3</p>
+                  <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    {currentStep === 1 && "Personal Information"}
+                    {currentStep === 2 && "Professional Background"}
+                    {currentStep === 3 && "Resume / CV"}
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-2">
+                    {currentStep === 1 && "Tell us a little about yourself."}
+                    {currentStep === 2 && "Share your professional journey with us."}
+                    {currentStep === 3 && "Upload your latest resume and complete your application."}
+                  </p>
                 </div>
-              </div>
 
-              {/* Section 2 — Professional Info */}
-              <div className={currentStep === 2 ? "block" : "hidden"}>
-                <div className="px-4 sm:px-6 md:px-8 pb-8">
-                  <ProfessionalSection
-                    register={register}
-                    errors={errors}
-                    watch={watch}
-                    isFresher={isFresher}
-                    hideNotice={hideNotice}
-                    hasReference={hasReference}
-                    jobTitle={jobTitle}
-                    validTill={validTill}
-                  />
-                  <div className="mt-8 flex justify-between">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="px-8 py-3 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
-                    >
-                      &larr; Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNext(2)}
-                      className="px-8 py-3 bg-[#E9327C] hover:bg-[#D12C6F] text-white rounded-xl font-bold shadow-sm transition-all"
-                    >
-                      Continue →
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 3 — Resume */}
-              <div className={currentStep === 3 ? "block" : "hidden"}>
-                <div className="px-4 sm:px-6 md:px-8 pb-8">
-                  <ResumeSection register={register} errors={errors} setValue={setValue} />
-                  {hasResume && (
-                    <div style={{ background: "linear-gradient(135deg, #111B3A 0%, #1E2D60 100%)" }} className="rounded-[24px] p-8 text-white mt-8 shadow-xl">
-                      <h3 className="text-[22px] font-bold mb-5 tracking-tight">Ready to submit?</h3>
-                      <ul className="space-y-3 mb-8">
-                        <li className="flex items-center gap-3">
-                          <div className="w-5 h-5 rounded-full bg-[#E9327C] flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 text-white stroke-[3]" />
-                          </div>
-                          <span className="text-slate-200 text-sm">Information completed</span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <div className="w-5 h-5 rounded-full bg-[#E9327C] flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 text-white stroke-[3]" />
-                          </div>
-                          <span className="text-slate-200 text-sm">Resume uploaded</span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <div className="w-5 h-5 rounded-full bg-[#E9327C] flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 text-white stroke-[3]" />
-                          </div>
-                          <span className="text-slate-200 text-sm">Application reviewed</span>
-                        </li>
-                      </ul>
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="px-6 py-2.5 bg-[#E9327C] hover:bg-[#D12C6F] text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-max"
+                {/* Section 1 — Personal Info */}
+                <div className={currentStep === 1 ? "block" : "hidden"}>
+                  <div className="px-4 sm:px-6 md:px-8 pb-8">
+                    <PersonalSection register={register} errors={errors} watch={watch} setValue={setValue} />
+                    <div className="mt-8 flex justify-end">
+                      <Button
+                        type="button"
+                        onClick={() => handleNext(1)}
+                        className="px-8 py-3 bg-[#E9327C] hover:bg-[#D12C6F] text-white rounded-xl font-bold shadow-sm transition-all h-auto text-base"
                       >
-                        {isSubmitting ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            Submitting…
-                          </>
-                        ) : (
-                          "Submit Application"
-                        )}
+                        Continue →
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2 — Professional Info */}
+                <div className={currentStep === 2 ? "block" : "hidden"}>
+                  <div className="px-4 sm:px-6 md:px-8 pb-8">
+                    <ProfessionalSection
+                      register={register}
+                      errors={errors}
+                      watch={watch}
+                      isFresher={isFresher}
+                      hideNotice={hideNotice}
+                      hasReference={hasReference}
+                      jobTitle={jobTitle}
+                      validTill={validTill}
+                    />
+                    <div className="mt-8 flex justify-between">
+                      <button
+                        type="button"
+                        onClick={handleBack}
+                        className="px-8 py-3 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
+                      >
+                        &larr; Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleNext(2)}
+                        className="px-8 py-3 bg-[#E9327C] hover:bg-[#D12C6F] text-white rounded-xl font-bold shadow-sm transition-all"
+                      >
+                        Continue →
                       </button>
                     </div>
-                  )}
-
-                  <div className="mt-8 pt-8 border-t border-slate-200 flex justify-start">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="px-8 py-3 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
-                    >
-                      &larr; Back
-                    </button>
                   </div>
                 </div>
-              </div>
-            </form>
+
+                {/* Section 3 — Resume */}
+                <div className={currentStep === 3 ? "block" : "hidden"}>
+                  <div className="px-4 sm:px-6 md:px-8 pb-8">
+                    <ResumeSection register={register} errors={errors} setValue={setValue} />
+                    {hasResume && (
+                      <div style={{ background: "linear-gradient(135deg, #111B3A 0%, #1E2D60 100%)" }} className="rounded-[24px] p-8 text-white mt-8 shadow-xl">
+                        <h3 className="text-[22px] font-bold mb-5 tracking-tight">Ready to submit?</h3>
+                        <ul className="space-y-3 mb-8">
+                          <li className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#E9327C] flex items-center justify-center shrink-0">
+                              <Check className="w-3 h-3 text-white stroke-[3]" />
+                            </div>
+                            <span className="text-slate-200 text-sm">Information completed</span>
+                          </li>
+                          <li className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#E9327C] flex items-center justify-center shrink-0">
+                              <Check className="w-3 h-3 text-white stroke-[3]" />
+                            </div>
+                            <span className="text-slate-200 text-sm">Resume uploaded</span>
+                          </li>
+                          <li className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#E9327C] flex items-center justify-center shrink-0">
+                              <Check className="w-3 h-3 text-white stroke-[3]" />
+                            </div>
+                            <span className="text-slate-200 text-sm">Application reviewed</span>
+                          </li>
+                        </ul>
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="px-6 py-2.5 bg-[#E9327C] hover:bg-[#D12C6F] text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-max"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              Submitting…
+                            </>
+                          ) : (
+                            "Submit Application"
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="mt-8 pt-8 border-t border-slate-200 flex justify-start">
+                      <button
+                        type="button"
+                        onClick={handleBack}
+                        className="px-8 py-3 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
+                      >
+                        &larr; Back
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* RIGHT COLUMN: Sidebar */}
@@ -634,24 +591,24 @@ export function CandidateApplicationForm({
               <h3 className="font-extrabold text-slate-900 text-lg mb-6 tracking-tight">Job Summary</h3>
               <div className="space-y-4 text-sm">
                 <div className="border-b border-slate-100 pb-4">
-                  <p className="text-slate-400 text-xs mb-1">Designer Editor</p>
-                  <p className="font-bold text-slate-900">Vinspyre</p>
+                  <p className="text-slate-400 text-xs mb-1">Job Title</p>
+                  <p className="font-bold text-slate-900">{jobTitle}</p>
                 </div>
-                <div className="border-b border-slate-100 pb-4">
+                {/* <div className="border-b border-slate-100 pb-4">
                   <p className="text-slate-400 text-xs mb-1">Department</p>
                   <p className="font-bold text-slate-900">{department}</p>
-                </div>
+                </div> */}
                 <div className="border-b border-slate-100 pb-4">
                   <p className="text-slate-400 text-xs mb-1">Employment</p>
-                  <p className="font-bold text-slate-900">{employmentType}</p>
+                  <p className="font-bold text-slate-900">{details?.employmentType}</p>
                 </div>
                 <div className="border-b border-slate-100 pb-4">
                   <p className="text-slate-400 text-xs mb-1">Location</p>
-                  <p className="font-bold text-slate-900">{location}</p>
+                  <p className="font-bold text-slate-900">{details?.location}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Experience</p>
-                  <p className="font-bold text-slate-900">{experience}</p>
+                  <p className="font-bold text-slate-900">{details?.experience}</p>
                 </div>
               </div>
             </div>
@@ -680,8 +637,8 @@ export function CandidateApplicationForm({
             <div className="bg-white border border-slate-200 rounded-3xl p-6 flex gap-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
               <ShieldCheck className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-extrabold text-base text-slate-900">You're in good hands</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Your information is safe and only shared with our hiring team.</p>
+                <p className="font-extrabold text-lg md:text-xl text-slate-900">You're in good hands</p>
+                <p className="text-xs md:text-base text-slate-500 mt-1 leading-relaxed">Your information is safe and only shared with our hiring team.</p>
               </div>
             </div>
 
@@ -700,7 +657,6 @@ export function CandidateApplicationForm({
           </div>
         </div>
       </div>
-
     </div>
   );
 }

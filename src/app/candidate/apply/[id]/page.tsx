@@ -19,13 +19,13 @@ export default function CandidateApplyPage() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_JOB_API_URL || "http://192.168.18.106:5004/api/v1"
         const response = await fetch(`${apiUrl}/hrms/recruitment/jobs/${jobId}/form`)
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch job details")
         }
 
         const data = await response.json()
-        
+
         if (data.success && data.data) {
           setJobDetails(data.data)
         } else {
@@ -96,7 +96,7 @@ export default function CandidateApplyPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
       <ApplyHeader />
-      <CandidateApplicationForm jobTitle={jobDetails.jobTitle} jobId={jobId} validTill={jobDetails.validTill ?? undefined} />
+      <CandidateApplicationForm jobTitle={jobDetails.jobTitle} jobId={jobId} validTill={jobDetails.validTill ?? undefined} details={jobDetails} />
     </div>
   )
 }
