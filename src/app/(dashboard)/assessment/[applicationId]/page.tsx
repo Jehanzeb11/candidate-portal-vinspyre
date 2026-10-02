@@ -2,16 +2,19 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { AlertCircle, Clock, CheckCircle2, XCircle, AlertTriangle, Loader } from "lucide-react"
+import { AlertCircle, AlertTriangle, Loader } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { apiFetch } from "@/lib/api-fetch"
 import ENDPOINTS from "@/server/Endpoints"
-import { MCQQuestion, FillBlankQuestion, DescriptiveQuestion } from "@/components/assessment/QuestionTypes"
 import type { AssessmentAnswer, Assessment } from "@/types"
 import { useAuthStore } from "@/store"
+import { AssessmentInstructionsView } from "@/components/assessment/views/AssessmentInstructionsView"
+import { AssessmentTakingView } from "@/components/assessment/views/AssessmentTakingView"
+import { AssessmentResultsView } from "@/components/assessment/views/AssessmentResultsView"
+import { AssessmentForcedSubmitView, AssessmentDisabledView, AssessmentSubmittingView } from "@/components/assessment/views/AssessmentFeedbackViews"
 
 type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled" | "screen_recording_blocked" | "violation_forced_submit"
 
@@ -839,7 +842,7 @@ export default function AssessmentPage() {
   if (state === "instructions") {
     if (!assessment) {
       return (
-        <div className="space-y-6 pb-12 max-w-2xl mx-auto p-4">
+        <div className="space-y-6 pb-12 max-w-full mx-auto p-4">
           <Card className="border-red-200 bg-red-50 dark:bg-red-950/30">
             <CardContent className="pt-6">
               <Alert className="border-red-200 bg-red-50 dark:bg-red-950/30">
@@ -858,761 +861,72 @@ export default function AssessmentPage() {
     }
 
     return (
-      <div className="min-h-screen flex justify-center p-4">
-        <div className="w-full max-w-4xl space-y-5">
-
-          {/* Header */}
-          <div className="text-center space-y-1">
-            <h1 className="text-2xl font-bold text-foreground">
-              {assessment.title || "Technical Assessment"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {assessment.description || "Read the instructions carefully before you begin."}
-            </p>
-          </div>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { label: "Questions", value: assessment.totalQuestions || assessment.questions?.length || 0 },
-              { label: "Per question", value: "2 min" },
-              { label: "Total time", value: `${(assessment.questions?.length || 0) * 2} min` },
-              { label: "Pass score", value: `${assessment.passingScore || 70}%` },
-            ].map((stat) => (
-              <div key={stat.label} className="bg-muted/50 rounded-xl p-3 text-center">
-                <p className="text-lg font-bold text-foreground">{stat.value}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Skills */}
-          {assessment.matchedSkills && assessment.matchedSkills.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Skills covered</p>
-              <div className="flex flex-wrap gap-1.5">
-                {assessment.matchedSkills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/40 rounded-full text-xs font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Rules card */}
-          <div className="rounded-xl border border-border/60 divide-y divide-border/40">
-            {/* Do section */}
-            <div className="p-4 space-y-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Guidelines</p>
-              <ul className="space-y-1.5 text-sm text-foreground/80">
-                {[
-                  "Stay in fullscreen for the entire session",
-                  "Keep this window in focus at all times",
-                  "You can review answers before final submission",
-                  "Each question has a 2-minute timer",
-                ].map((rule) => (
-                  <li key={rule} className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
-                    {rule}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {/* Don't section */}
-            <div className="p-4 space-y-2.5">
-              <p className="text-xs font-semibold text-red-400 uppercase tracking-wider">Prohibited</p>
-              <ul className="space-y-1.5 text-sm text-foreground/80">
-                {[
-                  "Switching tabs or windows",
-                  "Copying, pasting, or right-clicking",
-                  "Opening developer tools or taking screenshots",
-                  "Opening links in new windows or tabs",
-                ].map((rule) => (
-                  <li key={rule} className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                    {rule}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xs text-muted-foreground pt-1">
-                Violations are recorded. After {VIOLATION_THRESHOLD} warnings the test auto-submits.
-              </p>
-            </div>
-          </div>
-
-          {/* Screen recording warning */}
-          {screenRecordingDetected && (
-            <div className="rounded-xl border border-red-300 dark:border-red-700/50 bg-red-50 dark:bg-red-950/40 p-4 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 mt-0.5">
-                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-red-700 dark:text-red-300">
-                    🎥 Screen Recording / Sharing Detected
-                  </p>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1 leading-relaxed">
-                    Active screen capture was detected. This includes OBS, system recording, browser
-                    screen-share extensions, or any other capture software.
-                    You <strong>cannot start the assessment</strong> until all recording is stopped.
-                  </p>
-                </div>
-              </div>
-              <ul className="text-xs text-red-600 dark:text-red-400 ml-11 space-y-1 list-disc">
-                <li>Close OBS, Bandicam, or any recording software</li>
-                <li>Stop any browser screen-share / Meet / Zoom session</li>
-                <li>Disable screen-capture browser extensions</li>
-              </ul>
-              <button
-                onClick={async () => {
-                  if (checkInProgressRef.current) return
-                  checkInProgressRef.current = true
-                  setScreenRecordingCheckInProgress(true)
-                  const detected = await checkScreenRecording()
-                  setScreenRecordingDetected(detected)
-                  checkInProgressRef.current = false
-                  setScreenRecordingCheckInProgress(false)
-                  if (!detected) {
-                    toast.success("✅ No screen recording detected. You may now start.", { duration: 3000 })
-                  } else {
-                    toast.error("🎥 Screen recording is still active.", { duration: 3000 })
-                  }
-                }}
-                disabled={screenRecordingCheckInProgress}
-                className="ml-11 inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 dark:text-red-300 underline underline-offset-2 disabled:opacity-50"
-              >
-                {screenRecordingCheckInProgress ? "Checking…" : "Re-check now"}
-              </button>
-            </div>
-          )}
-
-          {/* No recording detected — reassurance */}
-          {/* {!screenRecordingDetected && !screenRecordingCheckInProgress && state === "instructions" && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30 px-3.5 py-2.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-                No screen recording detected. Environment looks clean.
-              </p>
-            </div>
-          )} */}
-
-          {screenRecordingCheckInProgress && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/40 px-3.5 py-2.5">
-              <Loader className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
-              <p className="text-xs text-muted-foreground">Checking for screen recording…</p>
-            </div>
-          )}
-
-          {/* CTA */}
-          <Button
-            onClick={handleStartAssessment}
-            className="w-full h-11 text-sm font-semibold"
-            disabled={screenRecordingDetected || screenRecordingCheckInProgress}
-          >
-            {screenRecordingCheckInProgress ? "Checking environment…" : "Begin Assessment"}
-          </Button>
-        </div>
-      </div>
+      <AssessmentInstructionsView
+        assessment={assessment!}
+        screenRecordingDetected={screenRecordingDetected}
+        screenRecordingCheckInProgress={screenRecordingCheckInProgress}
+        checkInProgressRef={checkInProgressRef}
+        onBack={() => router.push("/")}
+        onStart={handleStartAssessment}
+        onCheckScreenRecording={checkScreenRecording}
+        setScreenRecordingDetected={setScreenRecordingDetected}
+        setScreenRecordingCheckInProgress={setScreenRecordingCheckInProgress}
+        VIOLATION_THRESHOLD={VIOLATION_THRESHOLD}
+      />
     )
   }
 
   if (state === "taking") {
-    if (!assessment || !assessment.questions || assessment.questions.length === 0) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <Card className="max-w-md">
-            <CardContent className="pt-6 text-center space-y-4">
-              <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
-              <h2 className="text-lg font-bold">Assessment Error</h2>
-              <p className="text-sm text-muted-foreground">Assessment data is not available</p>
-              <Button onClick={() => router.push("/")} variant="outline">
-                Return to Dashboard
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )
-    }
-
-    const currentQuestion = assessment.questions[currentQuestionIndex]
-    const progressPercentage = ((currentQuestionIndex + 1) / assessment.questions.length) * 100
-
     return (
-      <div
-        ref={pageRef}
-        className="min-h-screen bg-gradient-to-b from-muted/30 to-background flex flex-col"
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        {/* Progress Bar - Top */}
-        <div className="sticky top-0 z-30 bg-background border-b border-border/50 py-4 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            {/* Progress header */}
-            <div className="flex items-center justify-between mb-3 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground tracking-widest uppercase mb-1">Progress</p>
-                <h2 className="text-lg font-bold text-foreground">
-                  Question {currentQuestionIndex + 1} of {assessment.questions.length}
-                </h2>
-              </div>
-              <div className={`text-right shrink-0 ${isTimeAlmostUp ? "text-red-500" : "text-foreground"}`}>
-                <div className="flex items-center gap-2 font-mono font-bold text-lg justify-end">
-                  <Clock className="h-4 w-4" />
-                  {formatTime(timeLeft)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Time remaining</p>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300 ease-out"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-
-            {/* Status indicators */}
-            <div className="flex items-center gap-4 mt-3 text-xs">
-              {tabHidden && (
-                <span className="flex items-center gap-1 text-amber-500 font-semibold">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Tab Hidden
-                </span>
-              )}
-              {/* {!isFullscreen && (
-                <span className="flex items-center gap-1 text-red-500 font-semibold">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Not Fullscreen
-                </span>
-              )} */}
-              {violations.length > 0 && (
-                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                  violation : {violations.length} / 3
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-start pt-8 px-4 sm:px-6">
-          <div className="w-full max-w-4xl">
-            {/* Session title */}
-            <div className="text-center mb-6">
-              <p className="text-xs font-semibold text-muted-foreground tracking-widest uppercase mb-2">
-                {assessment.title || "Technical Assessment"}
-              </p>
-
-            </div>
-
-            <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6">
-              {currentQuestion.question}
-            </h1>
-
-            {/* Question content */}
-            <div className="space-y-4 mb-12">
-              {/* Question Type Renderer */}
-              {getQuestionType(currentQuestion) === "mcq" && (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    {currentQuestion.options?.map((option: string, index: number) => {
-                      const isSelected = answers[currentQuestion.id]?.selectedAnswerIndex === index
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handleSelectAnswer(currentQuestion.id, index)}
-                          className={`
-                            w-full text-left px-4 py-3 rounded-lg border transition-all
-                            flex items-center justify-between gap-3 relative overflow-hidden
-                            ${isSelected
-                              ? "border-primary bg-inset dark:border-indigo-500/50 dark:bg-indigo-950/30"
-                              : "border-border/50 bg-transparent hover:border-border hover:bg-muted/30"
-                            }
-                          `}
-                        >
-                          {/* Left accent bar */}
-                          {isSelected && (
-                            <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-lg" />
-                          )}
-                          <span className={`text-sm font-semibold pl-2 ${isSelected ? "text-black dark:text-indigo-100" : "text-black/50"}`}>
-                            {option}
-                          </span>
-                          {/* Radio dot on the right */}
-                          <div
-                            className={`
-                              flex-shrink-0 w-4 h-4 rounded-full border-2 transition-all
-                              flex items-center justify-center
-                              ${isSelected
-                                ? "border-primary bg-primary"
-                                : "border-muted-foreground/30 bg-transparent"
-                              }
-                            `}
-                          >
-                            {isSelected && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                            )}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {getQuestionType(currentQuestion) === "fill_blank" && (
-                <FillBlankQuestion
-                  question={currentQuestion}
-                  answer={answers[currentQuestion.id]?.freeTextAnswer}
-                  onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
-                />
-              )}
-
-              {getQuestionType(currentQuestion) === "descriptive" && (
-                <DescriptiveQuestion
-                  question={currentQuestion}
-                  answer={answers[currentQuestion.id]?.freeTextAnswer}
-                  onAnswerChange={(text) => handleSetFreeTextAnswer(currentQuestion.id, text)}
-                />
-              )}
-            </div>
-
-            {/* Navigation Footer */}
-            <div className="flex items-center justify-between gap-4 pt-6 border-t border-border/50">
-              {/* <Button
-                onClick={handlePreviousQuestion}
-                disabled={true}
-                // disabled={currentQuestionIndex === 0 || !isCurrentQuestionAnswered}
-                variant="outline"
-                className="px-6"
-                title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
-              >
-                Previous
-              </Button> */}
-
-              <div className="text-sm text-muted-foreground text-center">
-                {totalAnswered} of {assessment.questions.length} answered
-              </div>
-
-              {currentQuestionIndex === assessment.questions.length - 1 ? (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="px-8 bg-primary hover:bg-primary/90"
-                >
-                  {isSubmitting ? "Submitting..." : "Finish Assessment"}
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNextQuestion}
-                  disabled={!isCurrentQuestionAnswered}
-                  className="px-8 bg-primary hover:bg-primary/90"
-                  title={!isCurrentQuestionAnswered ? "Answer the current question first" : ""}
-                >
-                  Next
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <AssessmentTakingView
+        pageRef={pageRef}
+        assessment={assessment!}
+        currentQuestionIndex={currentQuestionIndex}
+        currentQuestion={assessment?.questions?.[currentQuestionIndex]}
+        timeLeft={timeLeft}
+        progressPercentage={((currentQuestionIndex + 1) / (assessment?.questions?.length || 1)) * 100}
+        isTimeAlmostUp={timeLeft < 300}
+        tabHidden={tabHidden}
+        violations={violations}
+        answers={answers}
+        handleSelectAnswer={handleSelectAnswer}
+        handleSetFreeTextAnswer={handleSetFreeTextAnswer}
+        handleNextQuestion={handleNextQuestion}
+        handleSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        isCurrentQuestionAnswered={isCurrentQuestionAnswered}
+        totalAnswered={totalAnswered}
+        formatTime={formatTime}
+        getQuestionType={getQuestionType}
+      />
     )
   }
 
   if (state === "violation_forced_submit") {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-red-950/30">
-        <Card className="max-w-lg w-full mx-4 border-red-200 dark:border-red-800/40">
-          <CardContent className="pt-6 text-center space-y-6">
-            {/* Icon */}
-            <div className="flex justify-center">
-              <div className="w-20 h-20 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-10 w-10 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
-
-            {/* Heading */}
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
-                Assessment Auto-Submitted
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                You reached the maximum number of allowed violations. Your assessment has been
-                automatically submitted and your session will end shortly.
-              </p>
-            </div>
-
-            {/* Violations list */}
-            <div className="bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 rounded-lg p-4 text-left space-y-3">
-              <p className="text-sm font-semibold text-red-700 dark:text-red-300 text-center">
-                Violations that triggered auto-submit ({forcedSubmitViolations.length})
-              </p>
-              <ul className="space-y-2">
-                {forcedSubmitViolations.map((v, idx) => (
-                  <li
-                    key={idx}
-                    className="text-xs bg-white dark:bg-slate-900/50 rounded border border-red-200 dark:border-red-800 p-2.5 space-y-0.5"
-                  >
-                    <p className="font-semibold text-red-700 dark:text-red-300">
-                      #{idx + 1} — {v.type.replace(/_/g, " ")}
-                    </p>
-                    {v.details && (
-                      <p className="text-red-600 dark:text-red-400">{v.details}</p>
-                    )}
-                    <p className="text-muted-foreground text-[10px]">
-                      {new Date(v.timestamp).toLocaleTimeString()}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Logout countdown notice */}
-            <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-4">
-              <p className="text-xs text-red-700 dark:text-red-300">
-                ⏱️ You will be logged out automatically in a few seconds. Contact support if you believe
-                this is an error.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    return <AssessmentForcedSubmitView forcedSubmitViolations={forcedSubmitViolations} />
   }
 
   if (state === "violation_disabled") {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-red-950/30">
-        <Card className="max-w-md border-red-200 dark:border-red-800/40">
-          <CardContent className="pt-6 text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-10 w-10 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
-                Assessment Disabled
-              </h2>
-              <p className="text-muted-foreground">
-                Your assessment has been disabled due to suspicious activity (proctoring violations).
-              </p>
-            </div>
-
-            <div className="bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
-                Violations Detected:
-              </p>
-              <ul className="text-xs text-red-600 dark:text-red-400 space-y-1">
-                {violations.map((v, idx) => (
-                  <li key={idx}>
-                    • {v.type}: {v.details || "Violation detected"}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-4">
-              <p className="text-xs text-red-700 dark:text-red-300">
-                ⏱️ You will be logged out automatically in a few seconds. Please contact support if you believe this is an error.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    return <AssessmentDisabledView violations={violations} />
   }
 
   if (state === "submitting") {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="relative">
-                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/50 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">Assessment Submitted!</h2>
-              <p className="text-muted-foreground">
-                Your assessment has been submitted successfully. We will get back to you soon.
-              </p>
-            </div>
-
-            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-lg p-4">
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                ✓ Thank you for completing the assessment. Our team will review your responses and contact you with the results.
-              </p>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Redirecting to dashboard...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    return <AssessmentSubmittingView />
   }
 
   if (state === "results") {
-    if (!assessment?.questions) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <Card className="max-w-md">
-            <CardContent className="pt-6 text-center space-y-4">
-              <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
-              <h2 className="text-lg font-bold">Error</h2>
-              <p className="text-sm text-muted-foreground">Assessment data is not available</p>
-              <Button onClick={() => router.push("/")} variant="outline">
-                Return to Dashboard
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )
-    }
-
-    const correctCount = Object.entries(answers)
-      .filter(([qId, answer]) => {
-        const question = assessment.questions.find((q: any) => q.id === qId)
-        const qType = getQuestionType(question)
-        return qType === "mcq" && answer.selectedAnswerIndex === question?.correctAnswer
-      })
-      .length
-
-    const mcqCount = assessment.questions.filter((q: any) => getQuestionType(q) === "mcq").length
-
     return (
-      <div className="space-y-6 pb-12 max-w-2xl mx-auto p-4">
-        {/* Result header */}
-        <div className="text-center">
-          {isAlreadySubmitted && (
-            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400">
-              ✓ Already Submitted
-            </div>
-          )}
-          <div
-            className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${passed
-              ? "bg-emerald-100 dark:bg-emerald-950/50"
-              : "bg-red-100 dark:bg-red-950/50"
-              }`}
-          >
-            {passed ? (
-              <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
-            )}
-          </div>
-          <h1 className="text-2xl font-bold">
-            {passed ? "Congratulations! 🎉" : "Not Passed"}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {passed
-              ? "You have successfully passed the assessment."
-              : "You did not meet the passing score. Keep practicing!"}
-          </p>
-        </div>
-
-        {/* Score card */}
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-muted rounded-lg p-4">
-                <div className="text-2xl font-bold text-primary">{score}%</div>
-                <div className="text-xs text-muted-foreground mt-1">Your Score</div>
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <div className="text-2xl font-bold">
-                  {correctCount}/{mcqCount}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Correct Answers (MCQ Only)
-                </div>
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <div className="text-2xl font-bold text-amber-600">
-                  {assessment.passingScore || 70}%
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Passing Score
-                </div>
-              </div>
-            </div>
-
-            {!passed && (
-              <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30 flex items-center">
-                <AlertCircle className="h-4 w-4 text-amber-600 -mt-1" />
-                <AlertDescription className="text-amber-700 dark:text-amber-200 text-sm ml-5">
-                  You scored {score}%, but need {assessment.passingScore}% to pass. Please
-                  review the material and try again.
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Violations Summary */}
-        {violations.length > 0 && (
-          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
-            <CardHeader>
-              <CardTitle className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                {violations.length} Violation{violations.length !== 1 ? "s" : ""} Recorded
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 max-h-48 overflow-y-auto">
-              {violations.map((v, idx) => (
-                <div
-                  key={idx}
-                  className="text-xs bg-white dark:bg-slate-900/50 p-2 rounded border border-amber-200 dark:border-amber-800"
-                >
-                  <p className="font-semibold text-amber-700 dark:text-amber-300">
-                    {v.type}
-                  </p>
-                  {v.details && (
-                    <p className="text-amber-600 dark:text-amber-400 text-[11px] mt-0.5">
-                      {v.details}
-                    </p>
-                  )}
-                  <p className="text-muted-foreground text-[10px] mt-0.5">
-                    {new Date(v.timestamp).toLocaleTimeString()}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Review answers */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Answer Review</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 max-h-96 overflow-y-auto">
-            {assessment.questions?.map((question: any, idx: number) => {
-              const answer = answers[question.id]
-              const notAnswered = !answer
-              const qType = getQuestionType(question)
-
-              if (qType === "mcq") {
-                const isCorrect = answer?.selectedAnswerIndex === question.correctAnswer
-
-                return (
-                  <div
-                    key={question.id}
-                    className={`p-3 rounded-lg border ${notAnswered
-                      ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
-                      : isCorrect
-                        ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/30"
-                        : "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/30"
-                      }`}
-                  >
-                    <div className="flex items-start gap-2 mb-2">
-                      {notAnswered ? (
-                        <AlertCircle className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
-                      ) : isCorrect ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-                      )}
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold">
-                          {idx + 1}. {question.question}
-                        </p>
-                        {!notAnswered && (
-                          <div className="mt-2 space-y-1 text-sm">
-                            <p
-                              className={
-                                isCorrect
-                                  ? "text-emerald-700 dark:text-emerald-300"
-                                  : "text-red-700 dark:text-red-300"
-                              }
-                            >
-                              <strong>Your answer:</strong>{" "}
-                              {(question.options ?? [])[answer.selectedAnswerIndex ?? 0]}
-                            </p>
-                            {!isCorrect && (
-                              <>
-                                <p className="text-emerald-700 dark:text-emerald-300">
-                                  <strong>Correct answer:</strong>{" "}
-                                  {(question.options ?? [])[question.correctAnswer ?? 0]}
-                                </p>
-                                {question.explanation && (
-                                  <p className="text-muted-foreground italic">
-                                    <strong>Explanation:</strong>{" "}
-                                    {question.explanation}
-                                  </p>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        )}
-                        {notAnswered && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                            Not answered
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              } else {
-                // Free-input question
-                return (
-                  <div
-                    key={question.id}
-                    className={`p-3 rounded-lg border ${notAnswered
-                      ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30"
-                      : "border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-950/30"
-                      }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      {notAnswered ? (
-                        <AlertCircle className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold">
-                          {idx + 1}. {question.question}
-                        </p>
-                        {notAnswered ? (
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                            Not answered
-                          </p>
-                        ) : (
-                          <>
-                            <div className="mt-2 p-2.5 bg-white dark:bg-slate-900/50 rounded border border-blue-200 dark:border-blue-800/40">
-                              <p className="text-sm text-foreground whitespace-pre-wrap">
-                                {answer.freeTextAnswer}
-                              </p>
-                            </div>
-                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 italic">
-                              This response has been submitted for manual review by the assessment team.
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              }
-            })}
-          </CardContent>
-        </Card>
-
-        <Button onClick={handleFinish} size="lg" className="w-full">
-          Return to Dashboard
-        </Button>
-      </div>
+      <AssessmentResultsView
+        assessment={assessment!}
+        answers={answers}
+        passed={passed}
+        score={score}
+        violations={violations}
+        isAlreadySubmitted={isAlreadySubmitted}
+        handleFinish={handleFinish}
+        onReturnToDashboard={() => router.push("/")}
+        getQuestionType={getQuestionType}
+      />
     )
   }
 

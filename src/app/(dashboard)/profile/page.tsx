@@ -1,41 +1,29 @@
 "use client"
 
 import {
-  Mail,
-  Phone,
-  MapPin,
-  Link2,
-  ExternalLink,
-  Briefcase,
-  GraduationCap,
   FileText,
-  CalendarDays,
-  Clock,
-  Edit3,
-  MapPinIcon,
-  Globe,
+  ExternalLink,
+  ArrowRight,
+  Check,
+  Lock,
+  Sparkles,
 } from "lucide-react"
-
 import { useAuthStore } from "@/features/auth/store"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/utils/cn"
+import Link from "next/link"
+import Image from "next/image"
+import vpImg from "@/assets/vp-apply.png"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getInitials(name: string) {
-  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()
-}
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—"
-  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-}
-
 function formatCurrency(amount?: number | null) {
   if (amount == null) return "—"
-  return new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(amount)
+  return new Intl.NumberFormat("en-PK", {
+    style: "currency",
+    currency: "PKR",
+    maximumFractionDigits: 0,
+  }).format(amount)
 }
 
 function humanize(str?: string | null) {
@@ -43,7 +31,7 @@ function humanize(str?: string | null) {
   return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-// ─── Field component ──────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Field({
   label,
@@ -55,92 +43,46 @@ function Field({
   className?: string
 }) {
   return (
-    <div className={cn("flex-1", className)}>
-      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-        {label}
-      </p>
-      <p className="text-[14px] font-medium text-foreground wrap-break-word">
-        {value ?? "—"}
-      </p>
+    <div className={cn("flex flex-col gap-1", className)}>
+      <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">{label}</p>
+      <p className="text-[13px] font-semibold text-[#1a2342]">{value ?? "—"}</p>
     </div>
   )
 }
 
-// ─── Section header ───────────────────────────────────────────────────────────
-
-function SectionHeader({
+function SectionCard({
   title,
-  onEdit,
-}: {
-  title: string
-  onEdit?: () => void
-}) {
-  return (
-    <div className="flex items-center justify-between mb-6">
-      <h2 className="text-[16px] font-bold text-foreground">{title}</h2>
-      {onEdit && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onEdit}
-          className="gap-1.5 text-orange-500 border-orange-200 hover:bg-orange-50 dark:border-orange-900/40 dark:hover:bg-orange-950/20"
-        >
-          <Edit3 className="h-3.5 w-3.5" />
-          Edit
-        </Button>
-      )}
-    </div>
-  )
-}
-
-// ─── Section card ─────────────────────────────────────────────────────────────
-
-function Section({
-  title,
-  onEdit,
+  action,
   children,
 }: {
   title: string
-  onEdit?: () => void
+  action?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-      <SectionHeader title={title} onEdit={onEdit} />
+    <div className="rounded-[20px] border border-gray-100 bg-white p-5 sm:p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-[18px] font-extrabold text-[#1a2342]">{title}</h2>
+        {action}
+      </div>
       {children}
     </div>
   )
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function ProfileSkeleton() {
   return (
-    <div className="space-y-4 pb-12 max-w-6xl mx-auto">
-      {/* Hero skeleton */}
-      <div className="rounded-2xl border border-border bg-card p-6 flex items-center gap-4">
-        <Skeleton className="h-20 w-20 rounded-full shrink-0" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-3.5 w-32" />
-          <Skeleton className="h-3 w-24" />
+    <div className="pb-12 px-4 sm:px-6 space-y-6">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-[160px] w-full rounded-[24px]" />
+      <div className="flex gap-6">
+        <div className="flex-1 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-[120px] rounded-[20px]" />
+          ))}
         </div>
+        <Skeleton className="w-[260px] h-[400px] rounded-[20px] shrink-0" />
       </div>
-
-      {/* Sections skeleton */}
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="rounded-2xl border border-border bg-card p-8 space-y-4">
-          <Skeleton className="h-6 w-40" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, j) => (
-              <div key={j} className="space-y-2">
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
     </div>
   )
 }
@@ -150,216 +92,268 @@ function ProfileSkeleton() {
 export default function ProfilePage() {
   const profile = useAuthStore((s) => s.profile)
 
-  if (!profile) {
-    return <ProfileSkeleton />
-  }
+  if (!profile) return <ProfileSkeleton />
 
   const application = profile.jobApplications?.[0]
+  const recruitment = profile.recruitmentProgress
+  const stages = recruitment?.stages ?? []
+  const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || profile.fullName || "—"
+  const firstName = profile.firstName || profile.fullName?.split(" ")[0] || "there"
+  const skills: string[] = (profile as any).skills ?? []
+  const documents: { label: string; status: string }[] = (() => {
+    const subs = profile.candidateDocumentSubmissions ?? []
+    if (subs.length > 0) {
+      return subs.map((s) => ({
+        label: humanize((s as any).documentType ?? (s as any).type ?? "Document"),
+        status: s.status ?? "submitted",
+      }))
+    }
+    return []
+  })()
 
   return (
-    <div className="space-y-4 pb-12 max-w-8xl mx-auto">
+    <div className="pb-16 px-4 sm:px-6">
 
-      {/* ── Hero card ──────────────────────────────── */}
-      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-        <div className="flex items-start gap-5">
-          <Avatar className="h-20 w-20 ring-4 ring-primary/15 shrink-0">
-            <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-white text-2xl font-bold">
-              {getInitials(`${profile.firstName} ${profile.lastName}`)}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[20px] font-bold text-foreground truncate">
-              {`${profile.firstName} ${profile.lastName}`.trim()}
-            </h1>
-            {application?.positionAppliedFor && (
-              <p className="text-sm text-muted-foreground font-medium mt-0.5">
-                {application.positionAppliedFor}
-              </p>
-            )}
-            {application?.address && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-                <MapPin className="h-3 w-3" />
-                {application.address}
-              </p>
-            )}
-          </div>
+      {/* ── Page Header ── */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="space-y-4">
+          <p className="text-primary text-[14px] font-extrabold tracking-widest uppercase">Your Information</p>
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-[#1a2342] tracking-tight">My profile</h1>
+          <p className="text-base font-medium text-muted-foreground">A complete view of your information and hiring journey.</p>
+        </div>
+        <div className="pointer-events-none hidden md:block -mt-2">
+          <Image src={vpImg} alt="Vinspyre" className="h-[150px] w-auto object-contain" />
         </div>
       </div>
 
-      {/* ── Personal Information ───────────────────── */}
-      <Section title="Personal Information">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Field label="First Name" value={profile.firstName} />
-          <Field label="Last Name" value={profile.lastName} />
-          <Field label="Date of Birth" value={profile.age ? `Age ${profile.age}` : "—"} />
-          <Field label="Email Address" value={profile.email} />
-          <Field label="Phone Number" value={profile.phone} />
-          <Field label="Gender" value={humanize(profile.gender)} />
+      {/* ── Hero Card (Dark) ── */}
+      <div
+        className="rounded-[24px] text-white p-6 sm:p-8 mb-6 relative overflow-hidden flex items-center justify-between gap-6"
+        style={{ background: "linear-gradient(112deg, #101F45 8.57%, #172B5A 63.26%, #1C356B 91.43%)" }}
+      >
+        {/* Background shapes */}
+        <div className="absolute right-0 top-0 w-[350px] h-[350px] border border-white/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="absolute right-0 top-0 w-[450px] h-[450px] border border-white/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+
+        <div className="relative z-10">
+          <h2 className="text-2xl sm:text-4xl font-extrabold mb-3">
+            {firstName}{" "}
+            <span className="text-primary">{profile.lastName ?? ""}</span>
+          </h2>
+          <p className="text-white/60 text-sm font-medium mb-4">
+            {application?.positionAppliedFor ?? "Applicant"}
+            {application?.id && (
+              <span className="ml-3 text-white/40">· VSP-CAN-{String(application.id).slice(-4).toUpperCase()}</span>
+            )}
+          </p>
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-[14px] font-semibold text-white">
+            {recruitment?.currentStatus === "active" ? "Application in progress" :
+              recruitment?.currentStatus === "locked" ? "Stage locked" :
+                recruitment?.currentStatus === "completed" ? "Application complete" :
+                  "Application in progress"}
+          </div>
         </div>
-      </Section>
 
-      {/* ── Address ────────────────────────────────── */}
-      {application?.address && (
-        <Section title="Address">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Field label="Address" value={application.address} className="lg:col-span-3" />
-            {application.linkedInProfile && (
-              <Field label="City / State" value={application.linkedInProfile} />
-            )}
-            {profile.age && (
-              <Field label="Postal Code" value={profile.age?.toString()} />
+        {/* Avatar */}
+        <div className="relative z-10 shrink-0 hidden sm:block">
+          <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-full border-4 border-primary flex items-center justify-center overflow-hidden bg-white/10">
+            {profile?.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="Profile" className="object-cover h-full w-full" />
+            ) : (
+              <span className="text-3xl font-bold text-white">{firstName.charAt(0)}</span>
             )}
           </div>
-        </Section>
-      )}
+          <div className="absolute bottom-1 right-1 h-4 w-4 bg-emerald-400 rounded-full border-[3px] border-[#172B5A]" />
+        </div>
+      </div>
 
-      {/* ── Employment ────────────────────────────── */}
-      {application && (
-        <Section title="Employment">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Field label="Position Applied For" value={application.positionAppliedFor} />
-            <Field label="Current Employment Status" value={humanize(application.currentEmploymentStatus)} />
-            <Field label="Years of Experience" value={humanize(profile.yearsOfExperience)} />
-            <Field label="Current Salary (PKR)" value={formatCurrency(application.currentSalaryPkr)} />
-            <Field label="Expected Salary (PKR)" value={formatCurrency(application.expectedMonthlySalaryPkr)} />
-            <Field label="Notice Period" value={humanize(application.noticePeriod)} />
-            <Field label="Earliest Join Date" value={formatDate(application.earliestAvailableJoiningDate)} />
-            <Field label="Evening Shift" value={application.comfortableEveningShift ? "Comfortable" : "Not Comfortable"} />
-            <Field label="Worked With Us Before" value={profile.workedWithUsBefore ? "Yes" : "No"} />
-          </div>
-        </Section>
-      )}
+      {/* ── Two Column Layout ── */}
+      <div className="flex flex-col lg:flex-row gap-5">
 
-      {/* ── Education ──────────────────────────────── */}
-      {profile.educationalRecords && profile.educationalRecords.length > 0 && (
-        <Section title="Education">
-          <div className="space-y-3">
-            {profile.educationalRecords.map((edu, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-muted/30">
-                <GraduationCap className="h-4 w-4 text-primary shrink-0" />
-                <p className="text-sm font-medium">{edu.certificateOrDegree}</p>
+        {/* Left Column */}
+        <div className="flex-1 min-w-0 space-y-4">
+
+          {/* Personal Information */}
+          <SectionCard title="Personal information">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+              <Field label="Full Name" value={fullName} />
+              <Field label="Email Address" value={profile.email} />
+              <Field label="Phone Number" value={profile.phone} />
+              <Field label="Address" value={application?.address} />
+            </div>
+          </SectionCard>
+
+          {/* Professional Information */}
+          {application && (
+            <SectionCard title="Professional information">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                <Field label="Position Applied" value={application.positionAppliedFor} />
+                <Field
+                  label="Experience"
+                  value={profile.yearsOfExperience ? `${humanize(profile.yearsOfExperience)}` : "—"}
+                />
+                <Field label="Current Organization" value={application.organizationName} />
+                <Field
+                  label="Current Salary"
+                  value={
+                    application.currentSalaryPkr
+                      ? `${formatCurrency(application.currentSalaryPkr)} / year`
+                      : "—"
+                  }
+                />
+                {application.noticePeriod && (
+                  <Field label="Notice Period" value={humanize(application.noticePeriod)} />
+                )}
+                {application.currentEmploymentStatus && (
+                  <Field label="Employment Status" value={humanize(application.currentEmploymentStatus)} />
+                )}
               </div>
-            ))}
-          </div>
-        </Section>
-      )}
+            </SectionCard>
+          )}
 
-      {/* ── Employment History ────────────────────── */}
-      {profile.employmentRecords && profile.employmentRecords.length > 0 && (
-        <Section title="Employment History">
-          <div className="space-y-3">
-            {profile.employmentRecords.map((emp, i) => (
-              <div key={i} className="flex items-start gap-3 p-4 rounded-lg border border-border/40 bg-muted/30">
-                <Briefcase className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">{emp.position}</p>
-                  <p className="text-xs text-muted-foreground">{emp.organizationName}</p>
-                </div>
+          {/* Skills */}
+          {skills.length > 0 && (
+            <SectionCard title="Skills & expertise">
+              <div className="flex flex-wrap gap-2">
+                {skills.map((skill, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 rounded-full bg-gray-100 text-[#1a2342] text-xs font-semibold"
+                  >
+                    {skill}
+                  </span>
+                ))}
               </div>
-            ))}
-          </div>
-        </Section>
-      )}
+            </SectionCard>
+          )}
 
-      {/* ── Job Details ────────────────────────────── */}
-      {application && (
-        <Section title="Job Details">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Field label="Job Seeking Status" value={humanize(application.jobSeekingStatus)} />
-            <Field label="Heard About Opportunity" value={humanize(application.heardAboutOpportunity)} />
-            <Field label="Application Status" value={humanize(application.status)} />
-            {application.organizationName && (
-              <Field label="Current Organization" value={application.organizationName} />
-            )}
-            {application.positionDesignation && (
-              <Field label="Current Designation" value={application.positionDesignation} />
-            )}
-            {application.reasonForLeavingLastJob && (
-              <Field label="Reason For Leaving" value={application.reasonForLeavingLastJob} />
-            )}
-          </div>
-        </Section>
-      )}
-
-      {/* ── Interview & Offer ──────────────────────── */}
-      {profile.candidateInterviews && profile.candidateInterviews.length > 0 && (
-        <Section title="Interview & Offer">
-          <div className="space-y-4">
-            {profile.candidateInterviews.map((interview, i) => (
-              <div key={interview.id} className="p-4 rounded-lg border border-border/40 bg-muted/30">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Field label="Round" value={`${humanize(interview.roundType)} — Round ${interview.roundNumber}`} />
-                  <Field label="Interview Status" value={humanize(interview.status)} />
-                  <Field label="Offer Status" value={humanize(interview.offerStatus)} />
-                  {interview.offerSentAt && (
-                    <Field label="Offer Sent Date" value={formatDate(interview.offerSentAt)} />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* ── Documents ──────────────────────────────── */}
-      {profile.candidateDocumentSubmissions && profile.candidateDocumentSubmissions.length > 0 && (
-        <Section title="Submitted Documents">
-          <div className="space-y-4">
-            {profile.candidateDocumentSubmissions.map((sub) => (
-              <div key={sub.id} className="p-4 rounded-lg border border-border/40 bg-muted/30">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Field label="Document Status" value={humanize(sub.status)} />
-                  <Field label="Submitted At" value={formatDate(sub.submittedAt)} />
-                  {sub.reviewedAt && (
-                    <Field label="Reviewed At" value={formatDate(sub.reviewedAt)} />
-                  )}
-                  {sub.reviewNote && (
-                    <Field label="Review Note" value={sub.reviewNote} className="sm:col-span-2 lg:col-span-3" />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* ── CV & Cover Letter ──────────────────────– */}
-      {(application?.cvUrl || application?.coverLetter) && (
-        <Section title="Documents & Notes">
-          <div className="space-y-4">
-            {application.cvUrl && (
+          {/* CV */}
+          {application?.cvUrl && (
+            <SectionCard title="CV / Resume">
               <a
                 href={application.cvUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors"
+                className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-primary" />
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <p className="text-sm font-semibold">Curriculum Vitae</p>
-                    <p className="text-xs text-muted-foreground">Submitted with application</p>
+                    <p className="text-sm font-semibold text-[#1a2342]">Curriculum Vitae</p>
+                    <p className="text-xs text-gray-400 font-medium">Submitted with application</p>
                   </div>
                 </div>
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <ExternalLink className="h-4 w-4 text-gray-400" />
               </a>
-            )}
+            </SectionCard>
+          )}
 
-            {application.coverLetter && (
-              <div className="p-4 rounded-lg border border-border bg-muted/20">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Cover Letter
-                </p>
-                <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                  {application.coverLetter}
-                </p>
+          {/* Documents */}
+          {(documents.length > 0 || (profile.candidateDocumentSubmissions && profile.candidateDocumentSubmissions.length > 0)) && (
+            <SectionCard
+              title="Documents"
+              action={
+                <Link href="/documents" className="flex items-center gap-1 text-primary text-xs font-bold hover:text-primary/80 transition-colors">
+                  Manage <ArrowRight className="h-3 w-3" />
+                </Link>
+              }
+            >
+              <div className="space-y-2">
+                {(profile.candidateDocumentSubmissions ?? []).map((sub, i) => {
+                  const label = humanize((sub as any).documentType ?? (sub as any).type ?? `Document ${i + 1}`)
+                  const isUploaded = sub.status === "submitted" || sub.status === "approved" || sub.status === "reviewed"
+                  return (
+                    <div key={sub.id ?? i} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-medium text-[#1a2342]">{label}</span>
+                      </div>
+                      <span className={cn(
+                        "text-[11px] font-bold px-2.5 py-1 rounded-full",
+                        isUploaded
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-gray-100 text-gray-500"
+                      )}>
+                        {isUploaded ? "Uploaded" : humanize(sub.status)}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
-            )}
-          </div>
-        </Section>
-      )}
+            </SectionCard>
+          )}
 
+        </div>
+
+        {/* Right Column — Recruitment Timeline */}
+        <div className="w-full lg:w-[260px] shrink-0">
+          <div className="rounded-[20px] border border-gray-100 bg-white p-5 sticky top-4">
+            <h2 className="text-[15px] font-extrabold text-[#1a2342] mb-5">Recruitment timeline</h2>
+            <div className="space-y-0">
+              {stages.map((stage, idx) => {
+                const isCompleted = stage.status === "done" || stage.status === "submitted"
+                const isCurrent = stage.status === "active" || stage.status === "locked"
+                const isLocked = stage.status === "locked"
+
+                return (
+                  <div key={stage.key} className="flex gap-3 pb-5 last:pb-0 relative">
+                    {/* Vertical connector */}
+                    {idx < stages.length - 1 && (
+                      <div className={cn(
+                        "absolute left-[15px] top-8 w-[2px] h-[calc(100%-8px)]",
+                        isCompleted ? "bg-primary" : "bg-gray-100"
+                      )} />
+                    )}
+
+                    {/* Node */}
+                    <div className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold z-10",
+                      isCompleted
+                        ? "bg-primary text-white"
+                        : isCurrent
+                          ? "bg-white border-2 border-primary text-primary"
+                          : "bg-gray-100 text-gray-400"
+                    )}>
+                      {isCompleted ? (
+                        <Check className="h-4 w-4" strokeWidth={3} />
+                      ) : isLocked ? (
+                        <Lock className="h-3.5 w-3.5" />
+                      ) : (
+                        <span>{String(idx + 1)}</span>
+                      )}
+                    </div>
+
+                    {/* Label */}
+                    <div className="pt-0.5">
+                      <p className={cn(
+                        "text-[13px] font-semibold leading-tight",
+                        isCompleted || isCurrent ? "text-[#1a2342]" : "text-gray-400"
+                      )}>
+                        {stage.label}
+                      </p>
+                      <p className={cn(
+                        "text-[11px] font-medium mt-0.5",
+                        isCompleted ? "text-gray-400" :
+                          isCurrent && !isLocked ? "text-primary" :
+                            isLocked ? "text-amber-500" :
+                              "text-gray-300"
+                      )}>
+                        {isCompleted ? "Completed" :
+                          isLocked ? "Locked" :
+                            isCurrent ? "Current stage" :
+                              "Upcoming"}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }

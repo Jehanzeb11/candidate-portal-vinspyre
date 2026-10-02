@@ -87,7 +87,7 @@ export interface CandidateDocumentSubmission {
   candidateProfileId: string
   candidateInterviewId: string
   documents: { cnic: string; payslip: string; bill: string } | string[] // Support both new structured format and legacy array format
-  status: "submitted" | "reviewed" | "rejected"
+  status: "submitted" | "reviewed" | "rejected" | "approved"
   reviewedByUserId?: string | null
   reviewedAt?: string | null
   reviewNote?: string | null

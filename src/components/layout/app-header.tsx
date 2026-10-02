@@ -71,7 +71,7 @@ export function AppHeader() {
   })
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-[#E91E8C87] bg-[#D630690D] px-4 sm:px-6 transition-all">
+    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-[#E91E8C87] bg-[#fff] px-4 sm:px-6 transition-all">
       {/* ── Left: Sidebar toggle + breadcrumb ─────── */}
       <div className="flex items-center gap-3">
         <Tooltip>
@@ -149,7 +149,7 @@ export function AppHeader() {
                 </AvatarFallback>
               </Avatar>
               <div className="hidden sm:flex items-center gap-1.5">
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-xs font-bold text-foreground">
                   {displayName}
                 </span>
                 <svg
