@@ -394,7 +394,7 @@ export function CandidateApplicationForm({
               <div className="flex items-center justify-between relative mt-10 mb-4 w-full">
                 {/* Connecting lines */}
                 <div className={`absolute top-[18px] left-[23%] w-[20%] h-[3px] ${submittedData || currentStep > 1 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
-                <div className={`absolute top-[18px] left-[57%] w-[20%] h-[3px] ${submittedData || currentStep > 2 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
+                <div className={`absolute top-[18px] left-[56.5%] w-[20%] h-[3px] ${submittedData || currentStep > 2 ? "bg-[#E9327C]" : "bg-slate-100"}`} style={{ zIndex: 0 }} />
 
                 {/* Step 1 */}
                 <div className="flex flex-col items-center relative z-10 w-1/3">

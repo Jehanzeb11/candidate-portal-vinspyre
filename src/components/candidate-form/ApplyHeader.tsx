@@ -31,7 +31,7 @@ export function ApplyHeader() {
             href="/login"
             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-[#1e293b] hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
           >
-            Candidate Portal
+            Candidate login
           </Link>
         </div>
 

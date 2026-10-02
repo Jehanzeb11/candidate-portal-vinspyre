@@ -131,13 +131,13 @@ export interface OfferAccess {
 export interface RecruitmentStage {
   key: string
   label: string
-  status: "done" | "active" | "pending" | "submitted"
+  status: "done" | "active" | "pending" | "submitted" | "locked"
 }
 
 export interface RecruitmentProgress {
   currentStage: string
   currentStageLabel: string
-  currentStatus: "active" | "pending" | "completed"
+  currentStatus: "active" | "pending" | "completed" |  "locked"
   progressPercent: number
   message: string
   stages: RecruitmentStage[]
@@ -218,7 +218,9 @@ export interface OnboardingListResponse {
 
 export interface CandidateProfile {
   id: string
-  fullName: string
+  fullName?: string
+  firstName?: string
+  lastName?: string
   email: string
   phone?: string
   address?: string
@@ -247,7 +249,9 @@ export interface CandidateProfile {
   recruitmentProgress?: RecruitmentProgress
   createdAt?: string
   updatedAt?: string
+  currentStatus?:string
   isPasswordUpdated?: boolean
+  avatarUrl?:string
 }
 
 // ---------------------------------------------------------------------------

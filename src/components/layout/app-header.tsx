@@ -1,19 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { usePathname } from "next/navigation"
-import { Bell, CheckCheck, Clock } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Bell, CheckCheck, Clock, User as UserIcon, LogOut } from "lucide-react"
 
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import {
   Popover,
   PopoverContent,
-  PopoverHeader,
-  PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -45,10 +41,12 @@ export function AppHeader() {
 
   // Read everything from the global store — populated by the login action
   const profile = useAuthStore((s) => s.profile)
-  const user    = useAuthStore((s) => s.user)
+  const user = useAuthStore((s) => s.user)
+  const clearUser = useAuthStore((s) => s.clearUser)
+  const router = useRouter()
 
-  const displayName = profile?.fullName ?? user?.name ?? "Candidate"
-  const initials    = getInitials(displayName)
+  const displayName = profile?.fullName ?? user?.name ?? "Roary Watson"
+  const initials = getInitials(displayName)
 
   const markAllRead = () =>
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))
@@ -57,11 +55,23 @@ export function AppHeader() {
     PAGE_TITLES[pathname] ??
     (pathname.split("/").filter(Boolean)[0]
       ? pathname.split("/").filter(Boolean)[0].charAt(0).toUpperCase() +
-        pathname.split("/").filter(Boolean)[0].slice(1)
-      : "Dashboard")
+      pathname.split("/").filter(Boolean)[0].slice(1)
+      : "Overview")
+
+  // For hydration safety, we only render the date on the client
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/60 bg-background/80 px-4 sm:px-6 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-[#E91E8C87] bg-[#D630690D] px-4 sm:px-6 transition-all">
       {/* ── Left: Sidebar toggle + breadcrumb ─────── */}
       <div className="flex items-center gap-3">
         <Tooltip>
@@ -75,121 +85,117 @@ export function AppHeader() {
           </TooltipContent>
         </Tooltip>
 
-        <div className="h-4 w-px bg-border hidden sm:block" />
-
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm font-medium">
-          <span className="text-foreground font-semibold capitalize">{pageTitle}</span>
+          <span className="text-foreground md:inline hidden">Candidate portal</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-foreground h-3.5 w-3.5 md:inline hidden"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+          <span className="text-foreground">{pageTitle}</span>
         </nav>
       </div>
 
       {/* ── Right: actions + user pill ─────────────── */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-4 sm:gap-6">
 
-        {/* Notifications */}
-        {/* <Popover>
-          <PopoverTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                aria-label="Notifications"
-              >
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary ring-2 ring-background animate-pulse" />
-                )}
-              </Button>
-            }
-          />
-          <PopoverContent
-            className="w-80 p-4 rounded-2xl border-border bg-popover shadow-xl shadow-black/10"
-            align="end"
-            sideOffset={8}
+        {/* Date */}
+        <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-foreground">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
           >
-            <PopoverHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <PopoverTitle className="text-sm font-bold text-foreground">
-                  Notifications
-                </PopoverTitle>
-                {unreadCount > 0 && (
-                  <Badge className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full border-0">
-                    {unreadCount} new
-                  </Badge>
-                )}
-              </div>
-              {unreadCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={markAllRead}
-                  className="text-[11px] text-primary hover:text-primary/80 h-7 px-2"
-                >
-                  <CheckCheck className="h-3 w-3 mr-1" /> Mark read
-                </Button>
-              )}
-            </PopoverHeader>
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+            <line x1="16" x2="16" y1="2" y2="6" />
+            <line x1="8" x2="8" y1="2" y2="6" />
+            <line x1="3" x2="21" y1="10" y2="10" />
+            <path d="M8 14h.01" />
+            <path d="M12 14h.01" />
+            <path d="M16 14h.01" />
+            <path d="M8 18h.01" />
+            <path d="M12 18h.01" />
+            <path d="M16 18h.01" />
+          </svg>
+          <span>{mounted ? currentDate : "Loading..."}</span>
+        </div>
 
-            <div className="divide-y divide-border/50 py-1 max-h-72 overflow-y-auto">
-              {notifications.map((n) => {
-                const IconComponent = n.icon
-                return (
-                  <div
-                    key={n.id}
-                    className={`flex items-start gap-3 py-3 px-1 transition-colors rounded-xl ${
-                      n.unread ? "bg-primary/5" : ""
-                    }`}
-                  >
-                    <div className={`p-2 rounded-xl shrink-0 ${n.color}`}>
-                      <IconComponent className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-semibold text-foreground truncate">
-                          {n.title}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground flex items-center shrink-0">
-                          <Clock className="h-2.5 w-2.5 mr-0.5" />
-                          {n.time}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
-                        {n.desc}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
 
-            <Separator className="my-2" />
-            <Button
-              variant="ghost"
-              className="w-full text-xs text-muted-foreground hover:text-foreground h-8 rounded-xl"
-            >
-              View all notifications
-            </Button>
-          </PopoverContent>
-        </Popover> */}
-
-        {/* <div className="h-5 w-px bg-border" /> */}
+        <div className="h-8 w-[2px] bg-black hidden sm:block" />
 
         {/* User pill */}
-        <Link href={"/profile"} className="flex items-center gap-2 pl-1 cursor-pointer">
-          <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-            <AvatarFallback className="bg-linear-to-tr from-purple-600 to-indigo-600 text-white text-xs font-bold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="hidden xl:flex flex-col text-left">
-            <span className="text-xs font-semibold text-foreground leading-tight">
-              {displayName}
-            </span>
-            <span className="text-[10px] text-primary font-medium">
-              Candidate
-            </span>
-          </div>
-        </Link>
+        <Popover>
+          <PopoverTrigger>
+            <button className="flex items-center gap-3 cursor-pointer outline-none hover:bg-black/5 p-1 -m-1 rounded-xl transition-colors text-left">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-pink-100 text-[#1f2937] text-xs font-bold tracking-wider">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <span className="text-sm font-medium text-foreground">
+                  {displayName}
+                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 text-foreground/60"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-1 rounded-2xl shadow-xl shadow-pink-500/5 border-pink-100 bg-white/80 backdrop-blur-xl">
+            <div className="px-3 pt-2">
+              <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email ?? "Candidate"}</p>
+            </div>
+            <Separator className="bg-pink-100/50" />
+            <div className="flex flex-col gap-0.5">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2.5 w-full p-3 text-sm text-foreground rounded-xl hover:bg-pink-50 hover:text-pink-600 transition-all font-medium"
+              >
+                <UserIcon className="h-4 w-4" />
+                Profile
+              </Link>
+              <button
+                onClick={() => {
+                  clearUser();
+                  router.push("/login");
+                }}
+                className="cursor-pointer flex items-center gap-2.5 w-full p-3 text-sm text-red-600 rounded-xl hover:bg-red-50 transition-all font-medium text-left"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
 
       </div>
     </header>
