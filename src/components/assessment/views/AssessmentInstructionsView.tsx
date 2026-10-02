@@ -81,15 +81,16 @@ export function AssessmentInstructionsView({
               {/* Large decorative filled circle — right center, partially cropped */}
               {/* <div className="absolute right-[-40px] top-1/2 -translate-y-1/2 w-[100px] h-[110px] bg-pink-200 rounded-full pointer-events-none" /> */}
               {/* Smaller circle overlapping top-right of the big one */}
-              <div className="absolute right-[-55px] top-[-55px] w-[150px] h-[150px] bg-[#f5d3df9f] border-2 border-[#F5D3DF] rounded-full pointer-events-none" />
+              <div className="absolute right-[-55px] top-[-55px] w-[150px] h-[150px] bg-[#f5d3df9a] border-2 border-[#F5D3DF] rounded-full pointer-events-none z-20" />
+              <div className="absolute right-[-45px] top-[-60px] w-[170px] h-[170px] bg-[#ffeff5b9] rounded-full pointer-events-none z-10" />
 
               {/* White icon box */}
-              <div className="w-[60px] h-[60px] bg-white rounded-[18px] shadow-[0_4px_16px_rgba(0,0,0,0.10)] flex items-center justify-center shrink-0 relative z-10">
+              <div className="w-[60px] h-[60px] bg-white rounded-[18px] shadow-[0_4px_16px_rgba(0,0,0,0.10)] flex items-center justify-center shrink-0 relative z-30">
                 <stat.icon className="h-[26px] w-[26px] text-rose-500" strokeWidth={1.6} />
               </div>
 
               {/* Text */}
-              <div className="relative z-10 min-w-0">
+              <div className="relative z-30 min-w-0">
                 <p className="text-[28px] font-bold text-[#1a2342] leading-none tracking-tight">{stat.value}</p>
                 <p className="text-[13px] font-normal text-[#B0B8C1] mt-2 whitespace-nowrap">{stat.label}</p>
               </div>

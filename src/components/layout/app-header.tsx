@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { Bell, CheckCheck, Clock, User as UserIcon, LogOut } from "lucide-react"
+import { User as UserIcon, LogOut } from "lucide-react"
 
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAuthStore } from "@/features/auth/store"
-import { getNotifications } from "@/mocks/notifications"
+
 import Link from "next/link"
 
 function getInitials(name: string): string {
@@ -36,8 +36,6 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function AppHeader() {
   const pathname = usePathname()
-  const [notifications, setNotifications] = React.useState(() => getNotifications())
-  const unreadCount = notifications.filter((n) => n.unread).length
 
   // Read everything from the global store — populated by the login action
   const profile = useAuthStore((s) => s.profile)
@@ -47,9 +45,6 @@ export function AppHeader() {
 
   const displayName = profile?.fullName ?? user?.name ?? "Roary Watson"
   const initials = getInitials(displayName)
-
-  const markAllRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))
 
   const pageTitle =
     PAGE_TITLES[pathname] ??
@@ -70,8 +65,14 @@ export function AppHeader() {
     year: "numeric",
   })
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
+  }
+
   return (
-    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-[#E91E8C87] bg-[#fff] px-4 sm:px-6 transition-all">
+    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-[#f5c6d6]/60 bg-white/95 backdrop-blur-md px-4 sm:px-6 transition-all">
       {/* ── Left: Sidebar toggle + breadcrumb ─────── */}
       <div className="flex items-center gap-3">
         <Tooltip>
@@ -107,37 +108,31 @@ export function AppHeader() {
 
       {/* ── Right: actions + user pill ─────────────── */}
       <div className="flex items-center gap-4 sm:gap-6">
-
         {/* Date */}
-        <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-foreground">
+        <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-700">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="h-4 w-4"
+            className="h-4 w-4 text-slate-600"
           >
             <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
             <line x1="16" x2="16" y1="2" y2="6" />
             <line x1="8" x2="8" y1="2" y2="6" />
             <line x1="3" x2="21" y1="10" y2="10" />
-            <path d="M8 14h.01" />
-            <path d="M12 14h.01" />
-            <path d="M16 14h.01" />
-            <path d="M8 18h.01" />
-            <path d="M12 18h.01" />
-            <path d="M16 18h.01" />
           </svg>
           <span>{mounted ? currentDate : "Loading..."}</span>
         </div>
 
+        <div className="h-6 w-[1px] bg-slate-300 hidden sm:block" />
 
-        <div className="h-8 w-[2px] bg-black hidden sm:block" />
+        {/* User pill */}
 
         {/* User pill */}
         <Popover>

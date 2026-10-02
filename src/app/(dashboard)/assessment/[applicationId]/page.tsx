@@ -183,7 +183,7 @@ export default function AssessmentPage() {
       toast.error("🚨 Maximum violations reached. Your assessment is being submitted.", {
         duration: 5000,
       })
-      reportViolationsToBackend(violationRef.current)
+      // reportViolationsToBackend(violationRef.current)
     }
   }, [reportViolationsToBackend])
 
@@ -782,11 +782,11 @@ export default function AssessmentPage() {
   }
 
   // ─── Auto-submit trigger from violations ────────────────────────────────
-  useEffect(() => {
-    if (shouldAutoSubmit && !isSubmitting) {
-      handleSubmit()
-    }
-  }, [shouldAutoSubmit, isSubmitting, handleSubmit])
+  // useEffect(() => {
+  //   if (shouldAutoSubmit && !isSubmitting) {
+  //     handleSubmit()
+  //   }
+  // }, [shouldAutoSubmit, isSubmitting, handleSubmit])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -916,17 +916,19 @@ export default function AssessmentPage() {
 
   if (state === "results") {
     return (
-      <AssessmentResultsView
-        assessment={assessment!}
-        answers={answers}
-        passed={passed}
-        score={score}
-        violations={violations}
-        isAlreadySubmitted={isAlreadySubmitted}
-        handleFinish={handleFinish}
-        onReturnToDashboard={() => router.push("/")}
-        getQuestionType={getQuestionType}
-      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b132b]/40 backdrop-blur-sm">
+        <AssessmentResultsView
+          assessment={assessment!}
+          answers={answers}
+          passed={passed}
+          score={score}
+          violations={violations}
+          isAlreadySubmitted={isAlreadySubmitted}
+          handleFinish={handleFinish}
+          onReturnToDashboard={() => router.push("/")}
+          getQuestionType={getQuestionType}
+        />
+      </div>
     )
   }
 

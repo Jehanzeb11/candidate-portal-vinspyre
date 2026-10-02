@@ -14,7 +14,10 @@ import {
   Sparkles,
   ShieldCheck,
   ClipboardCheck,
-  Lock
+  Lock,
+  Clock,
+  MapPin,
+  Video
 } from "lucide-react"
 import { useAuthStore } from "@/features/auth/store"
 import { useCandidateProfile } from "@/features/auth/hooks/use-candidate-profile"
@@ -22,6 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CandidateDocumentUpload } from "@/components/documents/CandidateDocumentUpload"
 import { OfferAcceptanceModal } from "@/components/offer/OfferAcceptanceModal"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useOfferToken } from "@/hooks/useOfferToken"
 import { OnboardingSection } from "@/features/onboarding/components/OnboardingSection"
 import { cn } from "@/utils/cn"
@@ -47,9 +51,11 @@ function RecruitmentTracker() {
   const { refetch } = useCandidateProfile()
   const profile = useAuthStore((s) => s.profile)
   const [docsOpen, setDocsOpen] = useState(false)
+  const [interviewModalOpen, setInterviewModalOpen] = useState(false)
 
   const recruitment = profile?.recruitmentProgress
   const applications = profile?.jobApplications ?? []
+  const firstName = profile?.name?.split(" ")[0] || "there"
 
   if (!recruitment) {
     return (
@@ -223,13 +229,43 @@ function RecruitmentTracker() {
               {recruitment.currentStatus === 'locked' ? recruitment.message || "Assessment is currently locked." : "Show us how you think. Complete your technical evaluation to move forward."}
             </p>
           </div>
-          <Button
+          {recruitment.currentStatus !== 'completed' && <Button
             onClick={() => router.push(`/assessment/${applications[0].id}`)}
             disabled={recruitment.currentStatus === 'locked'}
             className={cn("w-full md:w-auto font-bold text-sm", recruitment.currentStatus === 'locked' ? "" : "bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02]")}
             variant={recruitment.currentStatus === 'locked' ? "outline" : "default"}
           >
             {recruitment.currentStatus === 'locked' ? "Locked" : <>Start Assessment <ArrowRight className="h-4 w-4 ml-2" /></>}
+          </Button>}
+        </div>
+      ) : recruitment.currentStage === "interview" ? (
+        <div className="rounded-[24px] border border-primary/20 bg-pink-50 p-6 sm:p-8 flex flex-col md:flex-row md:items-center gap-6 relative overflow-hidden">
+          {/* Decorative blobs */}
+          <div className="absolute right-[-40px] top-[-40px] w-[160px] h-[160px] bg-pink-100/60 rounded-full pointer-events-none" />
+          <div className="absolute right-[60px] bottom-[-50px] w-[100px] h-[100px] bg-pink-100/40 rounded-full pointer-events-none" />
+
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-xl shadow-pink-500/10 relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+
+          <div className="flex-1 relative z-10">
+            <p className="text-[10px] font-bold tracking-widest uppercase mb-1.5 text-pink-500">Current Stage</p>
+            <h3 className="text-xl font-bold text-[#1a2342] mb-1.5">Your interview is coming up</h3>
+            <p className="text-sm text-[#1a2342]/70 font-medium">
+              Your conversation with our team is scheduled. We can&#39;t wait to meet you.
+            </p>
+          </div>
+
+          <Button
+            onClick={() => setInterviewModalOpen(true)}
+            className="relative z-10 font-bold text-sm bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] gap-2 whitespace-nowrap"
+          >
+            View Details <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       ) : (
@@ -345,6 +381,65 @@ function RecruitmentTracker() {
           </div>
         </div>
       </div>
+
+      {/* Interview Details Modal */}
+      <Dialog open={interviewModalOpen} onOpenChange={setInterviewModalOpen}>
+        <DialogContent showCloseButton className="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 flex flex-col shadow-2xl border-0">
+          <div className="w-14 h-14 bg-pink-100/50 rounded-2xl flex items-center justify-center mb-6">
+            <Video className="h-6 w-6 text-pink-500" strokeWidth={2} />
+          </div>
+
+          <p className="text-[10px] font-extrabold tracking-widest text-[#ff3870] uppercase">
+            Upcoming Interview
+          </p>
+
+          <DialogTitle className="text-2xl font-extrabold text-[#0f172a] text-left">
+            Let's get to know each other.
+          </DialogTitle>
+
+          <p className="text-[#94a3b8] text-sm leading-relaxed px-2">
+            We're looking forward to meeting you, {firstName}. Here are the details for your upcoming interview.
+          </p>
+
+          <div className="w-full h-px bg-slate-100 mb-3" />
+
+          <div className="w-full flex flex-col gap-6 mb-8 text-left pl-4">
+            <div className="flex items-start gap-4">
+              <Calendar className="h-5 w-5 text-pink-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[10px] font-extrabold tracking-widest text-slate-400 uppercase mb-1">Date</p>
+                <p className="text-sm font-semibold text-[#0f172a]">October 5, 2026</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <Clock className="h-5 w-5 text-pink-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[10px] font-extrabold tracking-widest text-slate-400 uppercase mb-1">Time</p>
+                <p className="text-sm font-semibold text-[#0f172a]">10:30 AM</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <MapPin className="h-5 w-5 text-pink-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[10px] font-extrabold tracking-widest text-slate-400 uppercase mb-1">Location</p>
+                <p className="text-sm font-semibold text-[#0f172a]">Vinspyre Office</p>
+              </div>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => setInterviewModalOpen(false)}
+          >
+            <span>Got it</span>
+            <Check className="h-4 w-4 stroke-[3]" />
+          </Button>
+
+          {/* <button className="text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5 group">
+            Preview successful interview
+            <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+          </button> */}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -463,7 +558,7 @@ export default function HomePage() {
         offerToken={offerToken}
         onAcceptSuccess={handleOfferAcceptSuccess}
       />
+
     </div>
   )
 }
-

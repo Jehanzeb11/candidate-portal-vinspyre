@@ -137,7 +137,7 @@ export interface RecruitmentStage {
 export interface RecruitmentProgress {
   currentStage: string
   currentStageLabel: string
-  currentStatus: "active" | "pending" | "completed" |  "locked"
+  currentStatus: "active" | "pending" | "completed" |  "locked" | "done"
   progressPercent: number
   message: string
   stages: RecruitmentStage[]
