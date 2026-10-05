@@ -272,7 +272,7 @@ export function CandidateApplicationForm({
     } else if (step === 2) {
       const fieldsToValidate: (keyof CandidateFormValues)[] = [
         "highestEducation", "yearsOfExperience", "expectedSalary",
-        "joiningDate", "howDidYouHear"
+        "joiningDate", "howDidYouHear", "comfortableEveningShift", "hasReference"
       ];
       if (!isFresher) {
         fieldsToValidate.push(
@@ -283,6 +283,9 @@ export function CandidateApplicationForm({
         if (!hideNotice) {
           fieldsToValidate.push("noticePeriod");
         }
+      }
+      if (hasReference === "yes") {
+        fieldsToValidate.push("referenceName", "referenceRelationship");
       }
       isValid = await trigger(fieldsToValidate);
     }
