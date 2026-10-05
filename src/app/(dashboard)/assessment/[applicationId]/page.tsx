@@ -14,7 +14,8 @@ import { useAuthStore } from "@/store"
 import { AssessmentInstructionsView } from "@/components/assessment/views/AssessmentInstructionsView"
 import { AssessmentTakingView } from "@/components/assessment/views/AssessmentTakingView"
 import { AssessmentResultsView } from "@/components/assessment/views/AssessmentResultsView"
-import { AssessmentForcedSubmitView, AssessmentDisabledView, AssessmentSubmittingView } from "@/components/assessment/views/AssessmentFeedbackViews"
+import { AssessmentForcedSubmitView, AssessmentDisabledView } from "@/components/assessment/views/AssessmentFeedbackViews"
+import { AssessmentSubmissionSuccessModal } from "@/components/assessment/AssessmentSubmissionSuccessModal"
 
 type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled" | "screen_recording_blocked" | "violation_forced_submit"
 
@@ -64,6 +65,7 @@ export default function AssessmentPage() {
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null)
   const [totalAssessmentDuration, setTotalAssessmentDuration] = useState(0)
   const [forcedSubmitViolations, setForcedSubmitViolations] = useState<ViolationRecord[]>([])
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false)
 
   // Refs
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -755,15 +757,9 @@ export default function AssessmentPage() {
       // Dismiss the loading toast
       toast.dismiss(toastId)
 
-      // Show success screen first
+      // Show success modal instead of full-screen view
+      setShowSubmissionModal(true)
       setJustSubmitted(true)
-      setState("submitting")
-
-      // Wait 3 seconds then redirect to dashboard
-      setTimeout(() => {
-        exitFullscreen()
-        router.push("/")
-      }, 3000)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Failed to submit assessment"
       toast.error("Submission failed", {
@@ -878,27 +874,37 @@ export default function AssessmentPage() {
 
   if (state === "taking") {
     return (
-      <AssessmentTakingView
-        pageRef={pageRef}
-        assessment={assessment!}
-        currentQuestionIndex={currentQuestionIndex}
-        currentQuestion={assessment?.questions?.[currentQuestionIndex]}
-        timeLeft={timeLeft}
-        progressPercentage={((currentQuestionIndex + 1) / (assessment?.questions?.length || 1)) * 100}
-        isTimeAlmostUp={timeLeft < 300}
-        tabHidden={tabHidden}
-        violations={violations}
-        answers={answers}
-        handleSelectAnswer={handleSelectAnswer}
-        handleSetFreeTextAnswer={handleSetFreeTextAnswer}
-        handleNextQuestion={handleNextQuestion}
-        handleSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        isCurrentQuestionAnswered={isCurrentQuestionAnswered}
-        totalAnswered={totalAnswered}
-        formatTime={formatTime}
-        getQuestionType={getQuestionType}
-      />
+      <>
+        <AssessmentTakingView
+          pageRef={pageRef}
+          assessment={assessment!}
+          currentQuestionIndex={currentQuestionIndex}
+          currentQuestion={assessment?.questions?.[currentQuestionIndex]}
+          timeLeft={timeLeft}
+          progressPercentage={((currentQuestionIndex + 1) / (assessment?.questions?.length || 1)) * 100}
+          isTimeAlmostUp={timeLeft < 300}
+          tabHidden={tabHidden}
+          violations={violations}
+          answers={answers}
+          handleSelectAnswer={handleSelectAnswer}
+          handleSetFreeTextAnswer={handleSetFreeTextAnswer}
+          handleNextQuestion={handleNextQuestion}
+          handleSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          isCurrentQuestionAnswered={isCurrentQuestionAnswered}
+          totalAnswered={totalAnswered}
+          formatTime={formatTime}
+          getQuestionType={getQuestionType}
+        />
+        <AssessmentSubmissionSuccessModal
+          isOpen={showSubmissionModal}
+          questionCount={assessment?.questions?.length ?? 0}
+          onReturnDashboard={async () => {
+            await exitFullscreen()
+            router.push("/")
+          }}
+        />
+      </>
     )
   }
 
@@ -908,10 +914,6 @@ export default function AssessmentPage() {
 
   if (state === "violation_disabled") {
     return <AssessmentDisabledView violations={violations} />
-  }
-
-  if (state === "submitting") {
-    return <AssessmentSubmittingView />
   }
 
   if (state === "results") {

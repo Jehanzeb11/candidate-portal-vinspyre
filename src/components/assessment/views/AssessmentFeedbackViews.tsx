@@ -120,37 +120,4 @@ export function AssessmentDisabledView({ violations }: AssessmentDisabledViewPro
   )
 }
 
-export function AssessmentSubmittingView() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="max-w-md">
-        <CardContent className="pt-6 text-center space-y-6">
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/50 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">Assessment Submitted!</h2>
-            <p className="text-muted-foreground">
-              Your assessment has been submitted successfully. We will get back to you soon.
-            </p>
-          </div>
-
-          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-lg p-4">
-            <p className="text-sm text-emerald-700 dark:text-emerald-300">
-              ✓ Thank you for completing the assessment. Our team will review your responses and contact you with the results.
-            </p>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            Redirecting to dashboard...
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
