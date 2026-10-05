@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertCircle,
@@ -53,12 +53,25 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
   const router = useRouter()
   const { refetch } = useCandidateProfile()
   const profile = useAuthStore((s) => s.profile)
-  const [docsOpen, setDocsOpen] = useState(false)
-  const [interviewModalOpen, setInterviewModalOpen] = useState(false)
 
   const recruitment = profile?.recruitmentProgress
   const applications = profile?.jobApplications ?? []
-  const firstName = profile?.name?.split(" ")[0] || "there"
+  const firstName = profile?.firstName?.split(" ")[0] || "there"
+  const hasDocumentSubmission = (profile?.candidateDocumentSubmissions ?? []).some(
+    (d) => d.status === "submitted" || d.status === "reviewed"
+  )
+
+  const [docsOpen, setDocsOpen] = useState(false)
+  const [interviewModalOpen, setInterviewModalOpen] = useState(false)
+  const [onboardingWelcomeOpen, setOnboardingWelcomeOpen] = useState(
+    () => recruitment?.currentStage === "onboarding"
+  )
+
+  useEffect(() => {
+    if (recruitment?.currentStage === "onboarding") {
+      setOnboardingWelcomeOpen(true)
+    }
+  }, [recruitment?.currentStage])
 
   if (!recruitment) {
     return (
@@ -110,6 +123,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
           </div>
           <div className="px-4 py-1.5 rounded-full bg-white text-primary text-[11px] font-bold tracking-wide">
             {recruitment.currentStatus === 'active' && recruitment.currentStage === 'assessment' ? 'Assessment Active' :
+              recruitment.currentStatus === 'active' && recruitment.currentStage === 'documents' && hasDocumentSubmission ? 'Documents Submitted' :
               recruitment.currentStatus === 'active' ? 'Active Application' : 'In Progress'}
           </div>
         </div>
@@ -166,8 +180,9 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
             />
 
             {stages.map((stage, idx) => {
-              const isCompleted = stage.status === "done" || stage.status === "submitted"
-              const isCurrent = stage.status === "active"
+              const isSubmitted = stage.key === "documents" && stage.status === "submitted"
+              const isCompleted = (stage.status === "done") || (stage.status === "submitted" && !isSubmitted)
+              const isCurrent = stage.status === "active" || isSubmitted
               const isLocked = stage.status === "locked"
 
               return (
@@ -187,6 +202,8 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
                   >
                     {isCompleted ? (
                       <Check className="h-5 w-5" strokeWidth={3} />
+                    ) : isSubmitted ? (
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#DF2767] animate-pulse" />
                     ) : isLocked ? (
                       <Lock className="h-4 w-4" />
                     ) : (
@@ -205,7 +222,15 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
                       "text-[11px] font-medium",
                       isCurrent ? "text-[#DF2767]" : "text-[#BDBDBD]"
                     )}>
-                      {isCompleted ? "Completed" : isCurrent ? "In progress" : isLocked ? "Locked" : "Upcoming"}
+                      {isCompleted
+                        ? "Completed"
+                        : isCurrent && stage.key === "documents" && hasDocumentSubmission
+                          ? "Submitted"
+                          : isCurrent
+                            ? "In Progress"
+                            : isLocked
+                              ? "Locked"
+                              : "Upcoming"}
                     </p>
                   </div>
                 </div>
@@ -440,6 +465,60 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
           </div>
         </div>
       </div>
+
+      {/* ── Onboarding Welcome Modal ── */}
+      <Dialog open={onboardingWelcomeOpen} onOpenChange={setOnboardingWelcomeOpen}>
+        <DialogContent showCloseButton className="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 flex flex-col shadow-2xl border-0">
+          {/* Icon */}
+          <div className="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center mb-6">
+            <Sparkles className="h-7 w-7 text-[#ff3870]" strokeWidth={1.75} />
+          </div>
+
+          {/* Label */}
+          <p className="text-[10px] font-extrabold tracking-widest text-[#ff3870] uppercase mb-2">
+            It&apos;s Official
+          </p>
+
+          {/* Title */}
+          <DialogTitle className="text-2xl font-extrabold text-[#0f172a] text-left mb-3">
+            Welcome to Vinspyre 🎉
+          </DialogTitle>
+
+          {/* Subtitle */}
+          <p className="text-[#94a3b8] text-sm leading-relaxed mb-6">
+            Congratulations, {firstName}. We&apos;re so excited to have you join the team. Your next chapter is just around the corner.
+          </p>
+
+          {/* Joining Date */}
+          {app?.earliestAvailableJoiningDate && (
+            <div className="w-full bg-slate-50 rounded-2xl px-5 py-4 flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0">
+                <Calendar className="h-5 w-5 text-[#ff3870]" strokeWidth={1.75} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-0.5">
+                  Your Joining Date
+                </p>
+                <p className="text-sm font-bold text-[#0f172a]">
+                  {new Date(app.earliestAvailableJoiningDate).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* CTA */}
+          <Button
+            onClick={() => setOnboardingWelcomeOpen(false)}
+            className="w-full h-[52px] bg-[#e4326d] hover:bg-[#d02960] text-white font-bold text-[15px] rounded-2xl shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] gap-2"
+          >
+            Continue <ArrowRight className="h-4 w-4" />
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {/* Interview Details Modal */}
       <Dialog open={interviewModalOpen} onOpenChange={setInterviewModalOpen}>
