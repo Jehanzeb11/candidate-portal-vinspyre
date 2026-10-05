@@ -2,7 +2,7 @@
 // apiFetch — authenticated fetch wrapper
 //
 // - Adds Authorization: Bearer <token> from Zustand
-// - On 401: clears session + redirects to /login immediately
+// - On 401 or 403: clears session + redirects to /login immediately
 // - Throws ApiError with numeric `status` so callers can inspect it
 // ---------------------------------------------------------------------------
 import { useAuthStore } from "@/features/auth/store"
@@ -39,9 +39,9 @@ export async function apiFetch<T = unknown>(
 
   const body = await res.json().catch(() => null)
 
-  if (res.status === 401) {
+  if (res.status === 401 || res.status === 403) {
     handleUnauthorized()
-    throw new ApiError(401, body?.message ?? "Unauthorized")
+    throw new ApiError(res.status, body?.message ?? (res.status === 401 ? "Unauthorized" : "Forbidden"))
   }
 
   if (!res.ok) {
