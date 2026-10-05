@@ -117,7 +117,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
         <div className="absolute right-0 top-0 w-[500px] h-[500px] border border-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute right-0 top-0 w-[300px] h-[300px] border border-white/5 rounded-full -translate-y-1/2 translate-x-1/3 bg-white/5"></div>
 
-        <div className="flex items-start justify-between relative z-10 mb-8">
+        <div className="flex items-start justify-between relative z-10 mb-6 sm:mb-8">
           <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
             <Briefcase className="h-6 w-6 text-white" />
           </div>
@@ -128,10 +128,10 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
           </div>
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6 sm:mb-8">
+          <div className="min-w-0">
             <p className="text-pink-400 text-[10px] font-bold tracking-widest uppercase mb-2">Your Application</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold mb-1">{app?.positionAppliedFor ?? "Designer Editor"}</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold mb-1 break-words">{app?.positionAppliedFor ?? "Designer Editor"}</h2>
             <p className="text-white/60 text-sm">Design & Creative - Full-time</p>
           </div>
           <div className="text-left md:text-right">
@@ -150,7 +150,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
             <Calendar className="h-4 w-4" />
             <span>{appliedDate}</span>
           </div>
-          <button className="flex items-center gap-2 hover:text-white transition-colors font-medium">
+          <button className="flex items-center gap-2 hover:text-white transition-colors font-medium text-left sm:text-right">
             Your journey is moving forward <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -168,15 +168,15 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
           </div>
         </div>
 
-        <div className="overflow-x-auto pb-4">
-          <div className="flex min-w-[700px] items-start justify-between relative px-6">
+        <div className="overflow-x-auto pb-4 -mx-6 px-6">
+          <div className="flex min-w-[700px] items-start justify-between relative">
             {/* Main connecting line background */}
-            <div className="absolute top-5 left-[72px] right-[72px] h-[2px] bg-gray-100" />
+            <div className="absolute top-5 left-[48px] right-[48px] h-[2px] bg-gray-100" />
 
             {/* Active Line Overlay */}
             <div
-              className="absolute top-5 left-[72px] h-[2px] bg-[#DF2767] z-0 transition-all duration-700 ease-out"
-              style={{ width: `calc((100% - 144px) * ${progressLineWidth} / 100)` }}
+              className="absolute top-5 left-[48px] h-[2px] bg-[#DF2767] z-0 transition-all duration-700 ease-out"
+              style={{ width: `calc((100% - 96px) * ${progressLineWidth} / 100)` }}
             />
 
             {stages.map((stage, idx) => {
@@ -250,7 +250,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
               <ClipboardCheck className="h-8 w-8 text-pink-500" />
             )}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className={cn("text-[10px] font-bold tracking-widest uppercase mb-1.5", recruitment.currentStatus === 'locked' ? "text-gray-500" : "text-pink-500")}>Current Stage</p>
             <h3 className="text-xl font-bold text-[#1a2342] mb-1.5">Technical assessment</h3>
             <p className="text-sm text-[#1a2342]/70 font-medium">
@@ -281,7 +281,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
             </svg>
           </div>
 
-          <div className="flex-1 relative z-10">
+          <div className="flex-1 relative z-10 min-w-0">
             <p className="text-[10px] font-bold tracking-widest uppercase mb-1.5 text-pink-500">Current Stage</p>
             <h3 className="text-xl font-bold text-[#1a2342] mb-1.5">Your interview is coming up</h3>
             <p className="text-sm text-[#1a2342]/70 font-medium">
@@ -291,7 +291,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
 
           <Button
             onClick={() => setInterviewModalOpen(true)}
-            className="relative z-10 font-bold text-sm bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] gap-2 whitespace-nowrap"
+            className="relative z-10 font-bold text-sm bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] gap-2 whitespace-nowrap w-full md:w-auto"
           >
             View Details <ArrowRight className="h-4 w-4" />
           </Button>
@@ -302,7 +302,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
             <FileCheck className="h-8 w-8 text-[#ff3870]" strokeWidth={1.5} />
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-[10px] font-extrabold tracking-widest uppercase mb-1.5 text-[#ff3870]">Current Stage</p>
             <h3 className="text-[19px] text-[#2c3246] mb-1.5">Congratulations {firstName}, You're Our Top 10% Candidate</h3>
             <p className="text-[13px] text-[#8e98a8]">
@@ -310,7 +310,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-4 md:mt-0 relative z-10">
+          <div className="flex flex-col sm:flex-row gap-4 mt-4 md:mt-0 relative z-10 w-full md:w-auto">
             <Button
               onClick={() => onOpenOfferModal(profile?.offerAccess?.activeOfferId || undefined)}
               className="bg-white hover:bg-slate-50 text-[#ff3870] border-0 shadow-sm rounded-xl font-bold transition-all h-[44px] px-6 text-[13px]"
@@ -351,7 +351,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
                   <FileText className="h-8 w-8 text-[#ff3870]" strokeWidth={1.5} />
                 </div>
 
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-extrabold tracking-widest uppercase mb-1.5 text-[#ff3870]">Current Stage</p>
                   <h3 className="text-[19px] text-[#2c3246] mb-1.5">Upload your documents</h3>
                   <p className="text-[13px] text-[#8e98a8]">
@@ -359,10 +359,10 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
                   </p>
                 </div>
 
-                <div className="flex mt-4 md:mt-0 relative z-10">
+                <div className="flex mt-4 md:mt-0 relative z-10 w-full md:w-auto">
                   <Link
                     href="/documents"
-                    className="bg-[#e4326d] hover:bg-[#d02960] flex items-center gap-2 text-white rounded-xl shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] font-bold h-[44px] px-6 text-[13px] w-full sm:w-auto"
+                    className="bg-[#e4326d] hover:bg-[#d02960] flex items-center justify-center gap-2 text-white rounded-xl shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] font-bold h-[44px] px-6 text-[13px] w-full sm:w-auto"
                   >
                     View Documents <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -413,7 +413,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
           <div className="space-y-4">
             <div className="flex justify-between border-b border-gray-100 pb-4">
               <span className="text-sm text-gray-400 font-medium">Position applied</span>
-              <span className="text-sm font-bold text-[#1a2342]">{app?.positionAppliedFor ?? "Designer Editor"}</span>
+              <span className="text-sm font-bold text-[#1a2342] text-right break-words">{app?.positionAppliedFor ?? "Designer Editor"}</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-4">
               <span className="text-sm text-gray-400 font-medium">Application date</span>
@@ -438,7 +438,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
                   <Check className="h-5 w-5 text-pink-500" />
                 )}
               </div>
-              <div className="flex-1 pt-0.5">
+              <div className="flex-1 pt-0.5 min-w-0">
                 <div className="flex justify-between mb-1">
                   <p className="text-sm font-bold text-[#1a2342]">
                     {recruitment.currentStatus === 'locked' ? "Assessment locked" : "Assessment unlocked"}
@@ -454,7 +454,7 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
               <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                 <Check className="h-5 w-5 text-emerald-500" />
               </div>
-              <div className="flex-1 pt-0.5">
+              <div className="flex-1 pt-0.5 min-w-0">
                 <div className="flex justify-between mb-1">
                   <p className="text-sm font-bold text-[#1a2342]">Application approved</p>
                   <span className="text-[11px] font-medium text-gray-400">Sep 29</span>
@@ -571,11 +571,6 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
             <span>Got it</span>
             <Check className="h-4 w-4 stroke-[3]" />
           </Button>
-
-          {/* <button className="text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5 group">
-            Preview successful interview
-            <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-          </button> */}
         </DialogContent>
       </Dialog>
     </div>
@@ -628,7 +623,7 @@ export default function HomePage() {
             </div>
             <div className="absolute bottom-1 right-1 h-4 w-4 sm:h-5 sm:w-5 bg-emerald-500 rounded-full border-[3px] border-white"></div>
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-[10px] sm:text-xs font-bold tracking-widest text-[#1a2342] uppercase">Welcome Back</span>
               <div className="h-px w-8 sm:w-12 bg-[#1a2342]" />
