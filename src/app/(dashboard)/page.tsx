@@ -17,7 +17,9 @@ import {
   Lock,
   Clock,
   MapPin,
-  Video
+  Video,
+  FileCheck,
+  FileText
 } from "lucide-react"
 import { useAuthStore } from "@/features/auth/store"
 import { useCandidateProfile } from "@/features/auth/hooks/use-candidate-profile"
@@ -32,6 +34,7 @@ import { cn } from "@/utils/cn"
 import Link from "next/link"
 import vpImg from "@/assets/vp-apply.png"
 import Image from "next/image"
+import { TeamNoteSidebar } from "@/components/shared/TeamNoteSidebar"
 
 
 const stageDescriptions: Record<string, string> = {
@@ -46,7 +49,7 @@ const stageDescriptions: Record<string, string> = {
 
 // ─── Recruitment Tracker ─────────────────────────────────────────────────────
 
-function RecruitmentTracker() {
+function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: string) => void }) {
   const router = useRouter()
   const { refetch } = useCandidateProfile()
   const profile = useAuthStore((s) => s.profile)
@@ -268,6 +271,89 @@ function RecruitmentTracker() {
             View Details <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
+      ) : recruitment.currentStage === "offer" ? (
+        <div className="rounded-[24px] border border-pink-100 bg-[#fff6f8] p-6 sm:p-8 flex flex-col md:flex-row md:items-center gap-6 relative overflow-hidden">
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-pink-50">
+            <FileCheck className="h-8 w-8 text-[#ff3870]" strokeWidth={1.5} />
+          </div>
+
+          <div className="flex-1">
+            <p className="text-[10px] font-extrabold tracking-widest uppercase mb-1.5 text-[#ff3870]">Current Stage</p>
+            <h3 className="text-[19px] text-[#2c3246] mb-1.5">Congratulations {firstName}, You're Our Top 10% Candidate</h3>
+            <p className="text-[13px] text-[#8e98a8]">
+              Please Find Your Offer Letter
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 mt-4 md:mt-0 relative z-10">
+            <Button
+              onClick={() => onOpenOfferModal(profile?.offerAccess?.activeOfferId || undefined)}
+              className="bg-white hover:bg-slate-50 text-[#ff3870] border-0 shadow-sm rounded-xl font-bold transition-all h-[44px] px-6 text-[13px]"
+            >
+              Accept Offer <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+            <Button
+              onClick={() => onOpenOfferModal(profile?.offerAccess?.activeOfferId || undefined)}
+              className="bg-[#e4326d] hover:bg-[#d02960] text-white rounded-xl shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] font-bold h-[44px] px-6 text-[13px]"
+            >
+              View Offer Letter <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      ) : recruitment.currentStage === "documents" ? (
+        (() => {
+          const documentsStage = stages.find((s) => s.key === "documents")
+          const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
+          const canUpload = profile?.offerAccess?.canUploadDocuments ?? true
+
+          if (isDocsDone || !canUpload) {
+            return (
+              <div className="rounded-[24px] border border-primary bg-primary/5 px-6 py-5">
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1">
+                  Current Stage · {recruitment.currentStageLabel}
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {stageDescriptions[recruitment.currentStage] || recruitment.message}
+                </p>
+              </div>
+            )
+          }
+
+          return (
+            <div className="space-y-4">
+              <div className="rounded-[24px] border border-pink-100 bg-[#fff6f8] p-6 sm:p-8 flex flex-col md:flex-row md:items-center gap-6 relative overflow-hidden">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-pink-50">
+                  <FileText className="h-8 w-8 text-[#ff3870]" strokeWidth={1.5} />
+                </div>
+
+                <div className="flex-1">
+                  <p className="text-[10px] font-extrabold tracking-widest uppercase mb-1.5 text-[#ff3870]">Current Stage</p>
+                  <h3 className="text-[19px] text-[#2c3246] mb-1.5">Upload your documents</h3>
+                  <p className="text-[13px] text-[#8e98a8]">
+                    We just need a few documents to prepare your joining.
+                  </p>
+                </div>
+
+                <div className="flex mt-4 md:mt-0 relative z-10">
+                  <Link
+                    href="/documents"
+                    className="bg-[#e4326d] hover:bg-[#d02960] flex items-center gap-2 text-white rounded-xl shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] font-bold h-[44px] px-6 text-[13px] w-full sm:w-auto"
+                  >
+                    View Documents <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+
+              {docsOpen && (
+                <div className="rounded-[24px] border border-border overflow-hidden bg-white">
+                  <CandidateDocumentUpload
+                    onSuccess={() => { setDocsOpen(false); void refetch() }}
+                  />
+                </div>
+              )}
+            </div>
+          )
+        })()
       ) : (
         recruitment.currentStage && (
           <div className="rounded-[24px] border border-primary bg-primary/5 px-6 py-5">
@@ -281,33 +367,6 @@ function RecruitmentTracker() {
         )
       )}
 
-      {/* ── Documents upload ── */}
-      {recruitment.currentStage === "documents" && (() => {
-        const documentsStage = stages.find((s) => s.key === "documents")
-        const isDocsDone = documentsStage?.status === "done" || documentsStage?.status === "submitted"
-        const canUpload = profile?.offerAccess?.canUploadDocuments ?? true
-        return !isDocsDone && canUpload ? (
-          <div className="space-y-3">
-            <Button
-              variant={docsOpen ? "secondary" : "default"}
-              className="w-full sm:w-auto gap-2 rounded-xl"
-              onClick={() => setDocsOpen((prev) => !prev)}
-            >
-              <FileUp className="h-4 w-4" />
-              Upload Documents
-              {docsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-
-            {docsOpen && (
-              <div className="rounded-[24px] border border-border overflow-hidden bg-white">
-                <CandidateDocumentUpload
-                  onSuccess={() => { setDocsOpen(false); void refetch() }}
-                />
-              </div>
-            )}
-          </div>
-        ) : null
-      })()}
 
       {/* ── Onboarding ── */}
       {recruitment.currentStage === "onboarding" && (
@@ -468,7 +527,7 @@ function DashboardSkeleton() {
 export default function HomePage() {
   const { isLoading } = useCandidateProfile()
   const profile = useAuthStore((s) => s.profile)
-  const { showOfferModal, offerToken, closeOfferModal, handleOfferAcceptSuccess } = useOfferToken()
+  const { showOfferModal, offerToken, openOfferModal, closeOfferModal, handleOfferAcceptSuccess } = useOfferToken()
 
   if (isLoading) return <DashboardSkeleton />
 
@@ -505,7 +564,7 @@ export default function HomePage() {
         </div>
 
         {/* Recruitment Tracker */}
-        <RecruitmentTracker />
+        <RecruitmentTracker onOpenOfferModal={openOfferModal} />
       </div>
 
       {/* ── Right Column (Sidebar) ── */}
@@ -514,41 +573,7 @@ export default function HomePage() {
           <Image src={vpImg} alt="Vinspyre" className="h-[140px] lg:h-[190px] w-auto object-contain" />
         </div>
 
-        {/* A little note from us */}
-        <div className="bg-[#FBEAF0] rounded-[32px] border border-[#F7DCE6] p-4 sm:p-6 relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-40 h-40 bg-pink-100 rounded-full opacity-50"></div>
-          <div className="flex items-center gap-2 text-pink-500 mb-5 text-[10px] font-bold tracking-widest uppercase relative z-10">
-            <Sparkles className="h-4 w-4" />
-            A little note from us
-          </div>
-          <h3 className="text-xl font-bold text-[#1a2342] mb-3 leading-tight relative z-10">Every great journey starts with a first step.</h3>
-          <p className="text-sm font-medium text-[#1a2342]/70 mb-6 leading-relaxed relative z-10">
-            We're rooting for you, {firstName}. Take your time and do your best — we're excited to see what you bring.
-          </p>
-
-          <div className="flex items-center border-t border-[#F0CEDA] pt-4 gap-3 relative z-10">
-            <div className="flex -space-x-3">
-              <div className="w-9 h-9 rounded-full bg-[#1a2342] flex items-center justify-center text-[10px] text-white font-bold border-[3px] border-pink-50 z-30">AS</div>
-              <div className="w-9 h-9 rounded-full bg-pink-500 flex items-center justify-center text-[10px] text-white font-bold border-[3px] border-pink-50 z-20">JM</div>
-              <div className="w-9 h-9 rounded-full bg-pink-200 flex items-center justify-center text-[10px] text-pink-700 font-bold border-[3px] border-pink-50 z-10">+3</div>
-            </div>
-            <div className="text-[11px] ">
-              <p className="text-[#1a2342]/60 font-medium">Your Vinspyre</p>
-              <p className="font-semibold text-[#1a2342]">People Team</p>
-            </div>
-          </div>
-        </div>
-
-        {/* You're in good hands */}
-        <div className="bg-[#f8fafc] border border-slate-100 rounded-[24px] p-6 flex gap-4 mt-4">
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-slate-100">
-            <ShieldCheck className="h-5 w-5 text-slate-400" />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold text-[#1a2342] mb-1">You're in good hands</h4>
-            <p className="text-xs font-medium text-slate-500 leading-relaxed">Your information is safe and only shared with our hiring team.</p>
-          </div>
-        </div>
+        <TeamNoteSidebar firstName={firstName} />
       </div>
 
       {/* Offer Acceptance Modal */}

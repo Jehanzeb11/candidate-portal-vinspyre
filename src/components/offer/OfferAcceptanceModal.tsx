@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { Check, X, Loader2, Gift } from "lucide-react"
+import { Check, X, Loader2, Gift, FileText, Briefcase, ArrowRight } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuthStore } from "@/features/auth/store"
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? ""
 
@@ -37,12 +38,17 @@ interface OfferActionResponse {
   }
 }
 
-export function OfferAcceptanceModal({ 
-  isOpen, 
-  onClose, 
-  offerToken, 
-  onAcceptSuccess 
+export function OfferAcceptanceModal({
+  isOpen,
+  onClose,
+  offerToken,
+  onAcceptSuccess
 }: OfferAcceptanceModalProps) {
+  const profile = useAuthStore((s) => s.profile)
+  const token = useAuthStore((s) => s.token)
+  const app = profile?.jobApplications?.[0]
+  const positionTitle = app?.positionAppliedFor || "Designer Editor"
+
   const [isAccepting, setIsAccepting] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [actionCompleted, setActionCompleted] = useState<'accepted' | 'rejected' | null>(null)
@@ -53,22 +59,23 @@ export function OfferAcceptanceModal({
   // ── Accept Offer ──────────────────────────────────────────────────────────
 
   const handleAccept = async () => {
-    if (!offerToken) return
+    // if (!offerToken) return
 
     setIsAccepting(true)
     const toastId = toast.loading("Accepting your offer...")
 
     try {
       const response = await fetch(
-        `${BASE_URL}/recruitment/candidate-profile/offers/accept`,
+        `${BASE_URL}/recruitment/candidate-profile/offers/decision`,
         {
           method: "POST",
           headers: {
             "Accept": "application/json",
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            token: offerToken
+            action: "accept"
           }),
         }
       )
@@ -91,7 +98,7 @@ export function OfferAcceptanceModal({
       if (data.data?.loginToken) {
         // Short delay to show success message, then trigger cleanup
         setTimeout(() => {
-          onAcceptSuccess(data.data.loginToken)
+          onAcceptSuccess(data?.data?.loginToken)
         }, 1500)
       } else {
         // If no login token, still trigger success for cleanup
@@ -114,22 +121,23 @@ export function OfferAcceptanceModal({
   // ── Reject Offer ──────────────────────────────────────────────────────────
 
   const handleReject = async () => {
-    if (!offerToken) return
+    // if (!offerToken) return
 
     setIsRejecting(true)
     const toastId = toast.loading("Processing your decision...")
 
     try {
       const response = await fetch(
-        `${BASE_URL}/recruitment/candidate-profile/offers/reject`,
+        `${BASE_URL}/recruitment/candidate-profile/offers/decision`,
         {
           method: "POST",
           headers: {
             "Accept": "application/json",
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            token: offerToken
+            action: "reject"
           }),
         }
       )
@@ -168,14 +176,13 @@ export function OfferAcceptanceModal({
 
   if (actionCompleted) {
     return (
-      <Dialog open={isOpen} onOpenChange={() => {}}>
+      <Dialog open={isOpen} onOpenChange={() => { }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="text-center">
-            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-              actionCompleted === 'accepted' 
-                ? 'bg-emerald-100 text-emerald-600'
-                : 'bg-slate-100 text-slate-600'
-            }`}>
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${actionCompleted === 'accepted'
+              ? 'bg-emerald-100 text-emerald-600'
+              : 'bg-slate-100 text-slate-600'
+              }`}>
               {actionCompleted === 'accepted' ? (
                 <Check className="w-8 h-8" />
               ) : (
@@ -213,47 +220,50 @@ export function OfferAcceptanceModal({
   // ── Main Modal ───────────────────────────────────────────────────────────
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}} modal={true}>
-      <DialogContent 
-        className="sm:max-w-lg"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }} modal={true}>
+      <DialogContent
+        className="sm:max-w-md p-8 sm:p-10 border-0 shadow-2xl rounded-3xl bg-white gap-0"
       >
-        <DialogHeader>
-          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Gift className="w-8 h-8" />
+        <div className="w-14 h-14 bg-pink-100/50 rounded-2xl flex items-center justify-center mb-6">
+          <FileText className="h-6 w-6 text-pink-500" strokeWidth={2} />
+        </div>
+
+        <p className="text-[10px] font-extrabold tracking-widest text-[#ff3870] uppercase mb-2">
+          An Exciting Next Step
+        </p>
+
+        <DialogTitle className="text-2xl font-extrabold text-[#0f172a] mb-4">
+          Job Offer Decision Required
+        </DialogTitle>
+
+        <DialogDescription className="text-[#64748b] text-sm leading-relaxed mb-6">
+          Congratulations! You have received an offer from Vinspyre for the <strong className="font-semibold text-[#0f172a]">{positionTitle}</strong> position. We would be thrilled to have you on the team.
+        </DialogDescription>
+
+        <div className="bg-[#f8fafc] border border-slate-100 rounded-[16px] p-5 flex items-center gap-4 mb-8">
+          <Briefcase className="h-5 w-5 text-pink-500 shrink-0" strokeWidth={2} />
+          <div>
+            <p className="text-[10px] font-extrabold tracking-widest text-slate-400 uppercase mb-0.5">Your Offer</p>
+            <p className="text-sm font-semibold text-[#0f172a]">{positionTitle} · Full-time</p>
           </div>
-          <DialogTitle className="text-xl text-center">
-            Job Offer Decision Required
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            You have received a job offer. You must make a decision to proceed.
-          </DialogDescription>
-        </DialogHeader>
+        </div>
 
-        <Alert className="border-red-200 bg-red-50 dark:bg-red-950/30">
-          <AlertDescription className="text-red-700 dark:text-red-200">
-            <strong>Notice:</strong> You cannot close this dialog or navigate away until you accept or decline the offer.
-          </AlertDescription>
-        </Alert>
-
-        <div className="space-y-3 mt-6">
+        <div className="flex flex-col gap-3">
           {/* Accept Button */}
           <Button
             onClick={handleAccept}
             disabled={isAccepting || isRejecting}
-            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
-            size="lg"
+            className="w-full h-12 bg-[#ff3870] hover:bg-[#e63265] text-white rounded-xl shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] text-sm font-bold flex items-center justify-center gap-2"
           >
             {isAccepting ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Accepting Offer...
               </>
             ) : (
               <>
-                <Check className="w-5 h-5 mr-2" />
                 Accept Offer
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </Button>
@@ -262,26 +272,18 @@ export function OfferAcceptanceModal({
           <Button
             onClick={handleReject}
             disabled={isAccepting || isRejecting}
-            variant="destructive"
-            className="w-full h-12"
-            size="lg"
+            variant="ghost"
+            className="w-full h-12 text-[#ff3870] hover:bg-pink-50 hover:text-[#e63265] rounded-xl text-sm font-bold transition-all"
           >
             {isRejecting ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Declining Offer...
               </>
             ) : (
-              <>
-                <X className="w-5 h-5 mr-2" />
-                Decline Offer
-              </>
+              "Decline Offer"
             )}
           </Button>
-        </div>
-
-        <div className="mt-4 text-xs text-muted-foreground text-center">
-          This decision cannot be undone. Please choose carefully.
         </div>
       </DialogContent>
     </Dialog>

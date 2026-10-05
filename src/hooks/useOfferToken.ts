@@ -62,6 +62,11 @@ export function useOfferToken() {
     }
   }
 
+  const openOfferModal = (token?: string) => {
+    if (token) setOfferToken(token)
+    setShowOfferModal(true)
+  }
+
   const handleOfferAcceptSuccess = (loginToken: string) => {
     console.log("Offer accepted, login token received:", loginToken)
     
@@ -98,6 +103,7 @@ export function useOfferToken() {
   return {
     showOfferModal,
     offerToken,
+    openOfferModal,
     closeOfferModal,
     handleOfferAcceptSuccess,
   }
