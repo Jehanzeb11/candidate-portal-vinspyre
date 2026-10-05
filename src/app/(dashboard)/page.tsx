@@ -257,13 +257,13 @@ function RecruitmentTracker({ onOpenOfferModal }: { onOpenOfferModal: (token?: s
               {recruitment.currentStatus === 'locked' ? recruitment.message || "Assessment is currently locked." : "Show us how you think. Complete your technical evaluation to move forward."}
             </p>
           </div>
-          {recruitment.currentStatus !== 'completed' && <Button
+          {(recruitment.currentStatus === 'active' || recruitment.currentStatus === 'locked') && <Button
             onClick={() => router.push(`/assessment/${applications[0].id}`)}
-            disabled={recruitment.currentStatus === 'locked'}
-            className={cn("w-full md:w-auto font-bold text-sm", recruitment.currentStatus === 'locked' ? "" : "bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02]")}
-            variant={recruitment.currentStatus === 'locked' ? "outline" : "default"}
+            disabled={recruitment.currentStatus !== 'active'}
+            className={cn("w-full md:w-auto font-bold text-sm", recruitment.currentStatus !== 'active' ? "" : "bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02]")}
+            variant={recruitment.currentStatus !== 'active' ? "outline" : "default"}
           >
-            {recruitment.currentStatus === 'locked' ? "Locked" : <>Start Assessment <ArrowRight className="h-4 w-4 ml-2" /></>}
+            {recruitment.currentStatus !== 'active' ? "Locked" : <>Start Assessment <ArrowRight className="h-4 w-4 ml-2" /></>}
           </Button>}
         </div>
       ) : recruitment.currentStage === "interview" ? (

@@ -14,8 +14,9 @@ import { useAuthStore } from "@/store"
 import { AssessmentInstructionsView } from "@/components/assessment/views/AssessmentInstructionsView"
 import { AssessmentTakingView } from "@/components/assessment/views/AssessmentTakingView"
 import { AssessmentResultsView } from "@/components/assessment/views/AssessmentResultsView"
-import { AssessmentForcedSubmitView, AssessmentDisabledView } from "@/components/assessment/views/AssessmentFeedbackViews"
+import { AssessmentDisabledView } from "@/components/assessment/views/AssessmentFeedbackViews"
 import { AssessmentSubmissionSuccessModal } from "@/components/assessment/AssessmentSubmissionSuccessModal"
+import { AssessmentAutoSubmitModal } from "@/components/assessment/AssessmentAutoSubmitModal"
 
 type AssessmentState = "loading" | "instructions" | "taking" | "submitting" | "results" | "blocked" | "violation_disabled" | "screen_recording_blocked" | "violation_forced_submit"
 
@@ -64,7 +65,7 @@ export default function AssessmentPage() {
   const [justSubmitted, setJustSubmitted] = useState(false)
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null)
   const [totalAssessmentDuration, setTotalAssessmentDuration] = useState(0)
-  const [forcedSubmitViolations, setForcedSubmitViolations] = useState<ViolationRecord[]>([])
+  const [showAutoSubmitModal, setShowAutoSubmitModal] = useState(false)
   const [showSubmissionModal, setShowSubmissionModal] = useState(false)
 
   // Refs
@@ -75,82 +76,6 @@ export default function AssessmentPage() {
   const answersRef = useRef<Record<string, AssessmentAnswer>>({})
 
   // ─── Violation Recording ────────────────────────────────────────────────
-  // ─── Report Violations to Backend ──────────────────────────────────────
-  const reportViolationsToBackend = useCallback(async (violationsToReport: ViolationRecord[]) => {
-    try {
-      // Step 1: Hit the violations API
-      const violationPayload = {
-        testId: assessment?.id,
-        candidateProfileId: assessment?.candidateProfileId,
-        violations: violationsToReport.map((v) => ({
-          type: v.type,
-          message: v.details || v.type,
-          detectedAt: new Date(v.timestamp).toISOString(),
-        })),
-      }
-
-      await apiFetch<any>(ENDPOINTS.VIOLATION, {
-        method: "POST",
-        body: JSON.stringify(violationPayload),
-      })
-    } catch (error) {
-      console.error("Error reporting violations:", error)
-    }
-
-    // Step 2: Auto-submit the assessment
-    try {
-      const assessmentEndTime = Date.now()
-      const totalDurationSeconds = (assessment?.questions?.length || 0) * TIME_PER_QUESTION
-      const timeSpentSeconds = assessmentStartTime
-        ? Math.floor((assessmentEndTime - assessmentStartTime) / 1000)
-        : totalDurationSeconds
-
-      // Build answers object for API submission
-      const submissionAnswers: Record<string, string | number> = {}
-      const currentAnswers = answersRef.current
-      Object.entries(currentAnswers).forEach(([questionId, answer]) => {
-        if (answer.type === "mcq" && answer.selectedAnswerIndex !== undefined) {
-          const question = assessment?.questions?.find((q: any) => q.id === questionId)
-          if (question?.options) {
-            submissionAnswers[questionId] = question.options[answer.selectedAnswerIndex]
-          }
-        } else if (answer.freeTextAnswer !== undefined) {
-          submissionAnswers[questionId] = answer.freeTextAnswer
-        }
-      })
-
-      await apiFetch<any>(ENDPOINTS.SUBMIT_TEST, {
-        method: "POST",
-        body: JSON.stringify({
-          jobApplicationId: applicationId,
-          answers: submissionAnswers,
-          violations: violationsToReport,
-          totalDurationSeconds,
-          timeSpentSeconds,
-        }),
-      })
-    } catch (error) {
-      console.error("Error auto-submitting assessment after violations:", error)
-    }
-
-    // Step 3: Exit fullscreen and show violation forced-submit screen
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen()
-      }
-    } catch (e) {
-      console.error("Exit fullscreen error:", e)
-    }
-
-    setForcedSubmitViolations(violationsToReport)
-    setState("violation_forced_submit")
-
-    // Step 4: Log out after 8 seconds so the user has time to read
-    setTimeout(() => {
-      clearUser()
-      router.push("/login")
-    }, 8000)
-  }, [assessment, applicationId, assessmentStartTime, clearUser, router])
   // ─── Extension message listener ─────────────────────────────────────────
   useEffect(() => {
     const handleRecorderStatus = (event: MessageEvent) => {
@@ -163,7 +88,7 @@ export default function AssessmentPage() {
     return () => window.removeEventListener("message", handleRecorderStatus)
   }, [])
 
-  const recordViolation = useCallback((type: string, details?: string) => {
+  const recordViolation = useCallback(async (type: string, details?: string) => {
     const violation: ViolationRecord = {
       type,
       timestamp: Date.now(),
@@ -180,14 +105,72 @@ export default function AssessmentPage() {
       })
     }
 
-    // At exactly 3 violations — report to backend, auto-submit, and logout
+    // At exactly 3 violations — report to backend, auto-submit, and show modal
     if (violationCount === 3) {
       toast.error("🚨 Maximum violations reached. Your assessment is being submitted.", {
         duration: 5000,
       })
-      // reportViolationsToBackend(violationRef.current)
+
+      try {
+        // Step 1: Report violations to backend
+        const violationPayload = {
+          testId: assessment?.id,
+          candidateProfileId: assessment?.candidateProfileId,
+          violations: violationRef.current.map((v) => ({
+            type: v.type,
+            message: v.details || v.type,
+            detectedAt: new Date(v.timestamp).toISOString(),
+          })),
+        }
+
+        await apiFetch<any>(ENDPOINTS.VIOLATION, {
+          method: "POST",
+          body: JSON.stringify(violationPayload),
+        })
+
+        // Step 2: Auto-submit the assessment
+        const assessmentEndTime = Date.now()
+        const totalDurationSeconds = (assessment?.questions?.length || 0) * TIME_PER_QUESTION
+        const timeSpentSeconds = assessmentStartTime
+          ? Math.floor((assessmentEndTime - assessmentStartTime) / 1000)
+          : totalDurationSeconds
+
+        // Build answers object for API submission
+        const submissionAnswers: Record<string, string | number> = {}
+        const currentAnswers = answersRef.current
+        Object.entries(currentAnswers).forEach(([questionId, answer]) => {
+          if (answer.type === "mcq" && answer.selectedAnswerIndex !== undefined) {
+            const question = assessment?.questions?.find((q: any) => q.id === questionId)
+            if (question?.options) {
+              submissionAnswers[questionId] = question.options[answer.selectedAnswerIndex]
+            }
+          } else if (answer.freeTextAnswer !== undefined) {
+            submissionAnswers[questionId] = answer.freeTextAnswer
+          }
+        })
+
+        await apiFetch<any>(ENDPOINTS.SUBMIT_TEST, {
+          method: "POST",
+          body: JSON.stringify({
+            jobApplicationId: applicationId,
+            answers: submissionAnswers,
+            violations: violationRef.current,
+            totalDurationSeconds,
+            timeSpentSeconds,
+          }),
+        })
+
+        // Step 3: Exit fullscreen and show auto-submit modal
+        if (document.fullscreenElement) {
+          await document.exitFullscreen()
+        }
+
+        setShowAutoSubmitModal(true)
+      } catch (error) {
+        console.error("Error during auto-submit:", error)
+      }
     }
-  }, [reportViolationsToBackend])
+  }, [assessment, applicationId, assessmentStartTime])
 
   // ─── Fetch Test Data on Mount ───────────────────────────────────────────
   useEffect(() => {
@@ -778,11 +761,11 @@ export default function AssessmentPage() {
   }
 
   // ─── Auto-submit trigger from violations ────────────────────────────────
-  // useEffect(() => {
-  //   if (shouldAutoSubmit && !isSubmitting) {
-  //     handleSubmit()
-  //   }
-  // }, [shouldAutoSubmit, isSubmitting, handleSubmit])
+  useEffect(() => {
+    if (shouldAutoSubmit && !isSubmitting) {
+      handleSubmit()
+    }
+  }, [shouldAutoSubmit, isSubmitting, handleSubmit])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -904,12 +887,15 @@ export default function AssessmentPage() {
             router.push("/")
           }}
         />
+        <AssessmentAutoSubmitModal
+          isOpen={showAutoSubmitModal}
+          onReturnDashboard={async () => {
+            await exitFullscreen()
+            router.push("/")
+          }}
+        />
       </>
     )
-  }
-
-  if (state === "violation_forced_submit") {
-    return <AssessmentForcedSubmitView forcedSubmitViolations={forcedSubmitViolations} />
   }
 
   if (state === "violation_disabled") {
