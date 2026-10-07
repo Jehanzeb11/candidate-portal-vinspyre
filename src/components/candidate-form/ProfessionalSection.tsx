@@ -53,8 +53,10 @@ export function ProfessionalSection({
 }: ProfessionalSectionProps) {
   const positionReadOnly = Boolean(jobTitle);
 
-  // Today as YYYY-MM-DD for the min constraint
-  const today = new Date().toISOString().split("T")[0];
+  // Tomorrow as YYYY-MM-DD for the min constraint
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split("T")[0];
 
   // validTill from the API is an ISO string — extract just the date part for max
   const maxDate = validTill ? validTill.split("T")[0] : undefined;
@@ -293,15 +295,15 @@ export function ProfessionalSection({
           <input
             id="joiningDate"
             type="date"
-            min={today}
-            max={maxDate}
+            min={minDate}
+            // max={maxDate}
             {...register("joiningDate", {
               required: "Start date is required",
               validate: (value) => {
                 if (!value) return "Start date is required";
-                if (value < today) return "Start date cannot be in the past";
-                if (maxDate && value > maxDate)
-                  return `Start date must be on or before ${new Date(maxDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}`;
+                if (value < minDate) return "Start date must be from tomorrow onwards";
+                // if (maxDate && value > maxDate)
+                //   return `Start date must be on or before ${new Date(maxDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}`;
                 return true;
               },
             })}
